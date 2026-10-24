@@ -7,7 +7,9 @@ are wired into unblob.
 from unblob.models import Handler
 from unblob.plugins import hookimpl
 
-HANDLERS: list[type[Handler]] = []
+from .uf2 import UF2Handler
+
+HANDLERS: list[type[Handler]] = [UF2Handler]
 
 
 @hookimpl

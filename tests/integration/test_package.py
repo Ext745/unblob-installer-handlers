@@ -5,8 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 import unblob_installers
 from tests.conftest import FIXTURES
 
@@ -14,9 +12,6 @@ PACKAGE_DIR = Path(unblob_installers.__file__).parent
 UNBLOB = shutil.which("unblob") or str(Path(sys.executable).parent / "unblob")
 
 
-@pytest.mark.xfail(
-    not unblob_installers.HANDLERS, reason="no handler registered yet", strict=True
-)
 def test_tc_pkg_02_loads_with_plugins_path(tmp_path: Path):
     # -P loads the package directory itself; the installed entry point is
     # disabled by running with a clean PYTHONPATH and the package not importable.

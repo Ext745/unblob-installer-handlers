@@ -10,6 +10,7 @@ import pytest
 from unblob.plugins import UnblobPluginManager
 
 from tests.conftest import chunks, run_unblob
+from tests.uf2image import payload_image
 
 pytestmark = pytest.mark.journey
 
@@ -17,7 +18,6 @@ PICO = Path("boards/rp2040-pico-sdk")
 NAVX = Path("inno/navx-mxp-setup.exe")
 
 
-@pytest.mark.xfail(reason="FR-PKG-01: uf2 handler absent", strict=True)
 def test_jrn_01_1_plugin_registers_its_handlers():
     pm = UnblobPluginManager()
     pm.load_setuptools_entrypoints()
@@ -25,7 +25,6 @@ def test_jrn_01_1_plugin_registers_its_handlers():
     assert "uf2" in names
 
 
-@pytest.mark.xfail(reason="FR-UF2-01/02: uf2 handler absent", strict=True)
 def test_jrn_01_2_board_uf2_is_one_uf2_chunk(realfiles: Path, tmp_path: Path):
     uf2 = realfiles / PICO / "uih_rp2040_hello.uf2"
     found = chunks(run_unblob(uf2, tmp_path))
@@ -34,13 +33,14 @@ def test_jrn_01_2_board_uf2_is_one_uf2_chunk(realfiles: Path, tmp_path: Path):
     ]
 
 
-@pytest.mark.xfail(reason="FR-UF2-04/05/09: uf2 handler absent", strict=True)
 def test_jrn_01_3_region_equals_build_bin(realfiles: Path, tmp_path: Path):
-    run_unblob(realfiles / PICO / "uih_rp2040_hello.uf2", tmp_path)
-    region = next(tmp_path.rglob("RP2040/0x10000000.bin"))
-    assert (
-        region.read_bytes() == (realfiles / PICO / "uih_rp2040_hello.bin").read_bytes()
-    )
+    uf2 = realfiles / PICO / "uih_rp2040_hello.uf2"
+    run_unblob(uf2, tmp_path)
+    region = next(tmp_path.rglob("RP2040/0x10000000.bin")).read_bytes()
+    build = (realfiles / PICO / "uih_rp2040_hello.bin").read_bytes()
+    # FR-UF2-09: what the UF2 writes, equal to the build over its length.
+    assert region == payload_image(uf2)[1]
+    assert region[: len(build)] == build
 
 
 @pytest.mark.xfail(
