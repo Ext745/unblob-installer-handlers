@@ -6,6 +6,7 @@ the oracle (the handler itself runs unshield, so its output is not the oracle).
 
 import hashlib
 import random
+import shutil
 from pathlib import Path
 
 import pytest
@@ -20,7 +21,6 @@ def isc_chunks(result):
     return [c for c in chunks(result) if c.handler_name == "installshield"]
 
 
-@pytest.mark.xfail(reason="FR-ISC-01: installshield handler absent", strict=True)
 def test_tc_isc_01_found_at_its_offset(realfiles: Path, tmp_path: Path):
     cab = (realfiles / CAB).read_bytes()
     rng = random.Random(601)  # noqa: S311 - fixed test data, not cryptography
@@ -28,30 +28,33 @@ def test_tc_isc_01_found_at_its_offset(realfiles: Path, tmp_path: Path):
     sample.write_bytes(rng.randbytes(0x1000) + cab)
 
     assert [
-        c.start_offset for c in isc_chunks(run_unblob(realfiles / CAB, tmp_path / "a"))
+        c.start_offset
+        for c in isc_chunks(run_unblob(realfiles / CAB, tmp_path / "a", max_depth=1))
     ] == [0]
-    assert [c.start_offset for c in isc_chunks(run_unblob(sample, tmp_path / "b"))] == [
-        0x1000
-    ]
+    assert [
+        c.start_offset
+        for c in isc_chunks(run_unblob(sample, tmp_path / "b", max_depth=1))
+    ] == [0x1000]
 
 
-@pytest.mark.xfail(reason="FR-ISC-02: installshield handler absent", strict=True)
 def test_tc_isc_02_chunk_ends_at_the_cabinet_end(realfiles: Path, tmp_path: Path):
     cab = (realfiles / CAB).read_bytes()
     rng = random.Random(602)  # noqa: S311 - fixed test data, not cryptography
     sample = tmp_path / "trailing.bin"
     sample.write_bytes(cab + rng.randbytes(4096))
 
-    result = run_unblob(sample, tmp_path / "x")
+    result = run_unblob(sample, tmp_path / "x", max_depth=1)
 
     assert [(c.start_offset, c.end_offset) for c in isc_chunks(result)] == [
         (0, len(cab))
     ]
 
 
-@pytest.mark.xfail(reason="FR-ISC-03/05: installshield handler absent", strict=True)
 def test_tc_isc_03_all_files_match_the_md5_list(realfiles: Path, tmp_path: Path):
-    run_unblob(realfiles / CAB, tmp_path)
+    if shutil.which("unshield") is None:
+        pytest.skip("precondition unmet: unshield (extractors) not installed")
+    # The cabinet's own files are the claim; recursing into them costs minutes.
+    run_unblob(realfiles / CAB, tmp_path, max_depth=1)
     (out,) = [p for p in tmp_path.rglob("*_extract") if p.is_dir()][:1]
     expected = {
         line.split(maxsplit=1)[1].removeprefix("./"): line.split()[0]

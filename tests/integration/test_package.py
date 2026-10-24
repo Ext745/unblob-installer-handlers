@@ -1,6 +1,5 @@
 """Package requirements needing an unblob process (FSD §5)."""
 
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -9,15 +8,31 @@ import unblob_installers
 from tests.conftest import FIXTURES
 
 PACKAGE_DIR = Path(unblob_installers.__file__).parent
-UNBLOB = shutil.which("unblob") or str(Path(sys.executable).parent / "unblob")
+# The unblob of the environment under test, never another one on PATH.
+UNBLOB = str(Path(sys.executable).parent / "unblob")
+
+
+# Seam for FR-PKG-02 ("package not installed"): hide our installed
+# distribution from entry-point discovery, then run unblob's own CLI. Loading
+# the package both ways makes pluggy refuse the second registration.
+NOT_INSTALLED = """
+import importlib.metadata as md, sys
+_all = md.distributions
+md.distributions = lambda **kw: [
+    d for d in _all(**kw) if d.metadata["Name"] != "unblob-installer-handlers"
+]
+from unblob.cli import main
+sys.argv = ["unblob", *sys.argv[1:]]
+main()
+"""
 
 
 def test_tc_pkg_02_loads_with_plugins_path(tmp_path: Path):
-    # -P loads the package directory itself; the installed entry point is
-    # disabled by running with a clean PYTHONPATH and the package not importable.
     out = subprocess.run(
         [
-            UNBLOB,
+            sys.executable,
+            "-c",
+            NOT_INSTALLED,
             "-P",
             str(PACKAGE_DIR.parent),
             "-e",

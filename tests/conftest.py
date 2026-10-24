@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from unblob.handlers import BUILTIN_HANDLERS
 from unblob.models import ProcessResult
-from unblob.processing import ExtractionConfig, process_file
+from unblob.processing import DEFAULT_DEPTH, ExtractionConfig, process_file
 from unblob.report import ChunkReport
 
 import unblob_installers
@@ -35,12 +35,15 @@ def payload() -> bytes:
     return (FIXTURES / "payload.bin").read_bytes()
 
 
-def run_unblob(path: Path, extract_root: Path) -> ProcessResult:
+def run_unblob(
+    path: Path, extract_root: Path, max_depth: int = DEFAULT_DEPTH
+) -> ProcessResult:
     config = ExtractionConfig(
         extract_root=extract_root,
         randomness_depth=0,
         keep_extracted_chunks=True,
         handlers=(*BUILTIN_HANDLERS, *unblob_installers.HANDLERS),
+        max_depth=max_depth,
     )
     return process_file(config, path)
 
