@@ -36,8 +36,27 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # sfextract (FSD C-04) next to unblob, so the handlers find it on PATH.
+# imgtool and intelhex are test oracles (FSD §16.1), never called by a handler.
 RUN python3 -m venv /opt/tools-venv \
- && /opt/tools-venv/bin/pip install --no-cache-dir 'unblob==26.6.4' 'sfextract==0.0.8'
+ && /opt/tools-venv/bin/pip install --no-cache-dir 'unblob==26.6.4' 'sfextract==0.0.8' \
+      'imgtool==2.5.0' 'intelhex==2.3.0'
+
+# Oracles for tests (FSD §16.1): dfu-util and avr-objcopy from Ubuntu,
+# uf2conv.py with the uf2families.json this project vendors (FSD D-3), and
+# dfuse-pack.py from the dfu-util 0.11 release.
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      dfu-util=0.11-3build1 binutils-avr=2.43.50.20250108-1build1 \
+ && rm -rf /var/lib/apt/lists/*
+ARG UF2_REV=90e9741f217f5a40c98ba74d663e408041037578
+ARG DFU_UTIL_SHA256=b4b53ba21a82ef7e3d4c47df2952adf5fa494f499b6b0b57c58c5d04ae8ff19e
+RUN mkdir -p /opt/oracles \
+ && curl -fsSL -o /opt/oracles/uf2conv.py https://raw.githubusercontent.com/microsoft/uf2/${UF2_REV}/utils/uf2conv.py \
+ && curl -fsSL -o /opt/oracles/uf2families.json https://raw.githubusercontent.com/microsoft/uf2/${UF2_REV}/utils/uf2families.json \
+ && curl -fsSL -o /tmp/dfu-util.tgz https://dfu-util.sourceforge.net/releases/dfu-util-0.11.tar.gz \
+ && echo "${DFU_UTIL_SHA256}  /tmp/dfu-util.tgz" | sha256sum -c - \
+ && tar xzf /tmp/dfu-util.tgz -C /opt/oracles --strip-components=1 dfu-util-0.11/dfuse-pack.py \
+ && rm /tmp/dfu-util.tgz
 
 # The image's uid 1000 is "ubuntu"; the runner refuses to run as root.
 WORKDIR /home/ubuntu/actions-runner
@@ -49,6 +68,17 @@ RUN curl -fsSL -o runner.tgz \
  && chown -R ubuntu:ubuntu /home/ubuntu/actions-runner
 
 COPY --from=innoextract /usr/local/bin/innoextract /usr/local/bin/innoextract
+
+# PR #1255's PE/NSIS handler (FSD §15, D-1) at a pinned head, as a plugin
+# package for tests: unblob -P /opt/pr1255. Its only code change upstream is
+# this module plus one registration line.
+ARG PR1255_REV=6e799adc62b548012faa912b13eb0eed455fb800
+ARG PR1255_PE_SHA256=afd8a7a76fa99347baf1bb67252f32832aa9f93b7a01f233d8e96c037fd98425
+COPY pr1255/__init__.py /opt/pr1255/unblob_pr1255/__init__.py
+RUN curl -fsSL -o /opt/pr1255/unblob_pr1255/pe.py \
+      https://raw.githubusercontent.com/onekey-sec/unblob/${PR1255_REV}/python/unblob/handlers/executable/pe.py \
+ && echo "${PR1255_PE_SHA256}  /opt/pr1255/unblob_pr1255/pe.py" | sha256sum -c - \
+ && sed -i 's/^from \.\.\.\(file_utils\|models\|extractors\|report\)/from unblob.\1/; s/^from \.\.\./from unblob./' /opt/pr1255/unblob_pr1255/pe.py
 COPY runner-loop.sh /usr/local/bin/runner-loop.sh
 USER ubuntu
 ENV PATH=/opt/tools-venv/bin:$PATH
