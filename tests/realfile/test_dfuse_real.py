@@ -2,22 +2,18 @@
 
 from pathlib import Path
 
-import pytest
-
 from tests.conftest import chunks, run_unblob
 
 DFU = Path("dfuse/flipper-z-f7-full-1.5.1.dfu")
 BIN = Path("dfuse/flipper-z-f7-full-1.5.1.bin")
 
 
-@pytest.mark.xfail(reason="FR-DFU-01: dfuse handler absent", strict=True)
 def test_tc_dfu_01_flipper_whole_file_is_one_chunk(realfiles: Path, tmp_path: Path):
     dfu = realfiles / DFU
     found = [c for c in chunks(run_unblob(dfu, tmp_path)) if c.handler_name == "dfuse"]
     assert [(c.start_offset, c.end_offset) for c in found] == [(0, dfu.stat().st_size)]
 
 
-@pytest.mark.xfail(reason="FR-DFU-06: dfuse handler absent", strict=True)
 def test_tc_dfu_06_flipper_element_equals_vendor_bin(realfiles: Path, tmp_path: Path):
     run_unblob(realfiles / DFU, tmp_path)
     elements = sorted(

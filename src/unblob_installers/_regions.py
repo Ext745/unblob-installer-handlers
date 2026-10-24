@@ -5,8 +5,11 @@ never filled, so the bytes written never exceed the bytes the image carries
 (NFR-SEC-02).
 """
 
+import re
 from collections.abc import Iterable
 from pathlib import PurePosixPath
+
+_UNSAFE = re.compile(rb"[^A-Za-z0-9._-]")
 
 
 class OverlapConflictError(ValueError):
@@ -49,3 +52,13 @@ def assemble(writes: Iterable[tuple[int, bytes, int]]) -> list[tuple[int, bytes]
 def region_name(address: int) -> PurePosixPath:
     """Region file name: the start address as 8 lowercase hex digits."""
     return PurePosixPath(f"0x{address:08x}.bin")
+
+
+def safe_name(raw: bytes, default: str) -> str:
+    """Make a path component from input bytes (NFR-SEC-01).
+
+    Trailing NUL padding is dropped, every byte outside [A-Za-z0-9._-] becomes
+    "_", and an empty result, "." or ".." becomes default.
+    """
+    name = _UNSAFE.sub(b"_", raw.rstrip(b"\0")).decode("ascii")
+    return default if name in ("", ".", "..") else name

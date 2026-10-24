@@ -3,14 +3,11 @@
 import random
 from pathlib import Path
 
-import pytest
-
 from tests.conftest import FIXTURES, chunks, run_unblob
 
 FIXTURE = FIXTURES / "dfuse" / "standard.dfu"
 
 
-@pytest.mark.xfail(reason="FR-DFU-01: dfuse handler absent", strict=True)
 def test_tc_dfu_01_chunk_is_prefix_to_suffix(tmp_path: Path):
     rng = random.Random(1201)  # noqa: S311 - fixed test data, not cryptography
     before, after = rng.randbytes(0x400), rng.randbytes(500)
@@ -29,7 +26,6 @@ def test_tc_dfu_01_chunk_is_prefix_to_suffix(tmp_path: Path):
     ]
 
 
-@pytest.mark.xfail(reason="FR-DFU-04: dfuse handler absent", strict=True)
 def test_tc_dfu_04_one_file_per_element(tmp_path: Path, payload: bytes):
     run_unblob(FIXTURE, tmp_path)
 
