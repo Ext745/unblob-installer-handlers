@@ -44,7 +44,7 @@ def test_jrn_01_3_region_equals_build_bin(realfiles: Path, tmp_path: Path):
 
 
 @pytest.mark.xfail(
-    reason="FR-INNO-01, FR-PE-01: FSD Phase 3 (inno handler, PR #1255)", run=False
+    reason="FR-INNO-01, FR-PE-01: FSD Phase 3 (inno handler, PR #1255)", strict=True
 )
 def test_jrn_02_1_vendor_updater_is_one_inno_chunk(realfiles: Path, tmp_path: Path):
     exe = realfiles / NAVX
@@ -52,7 +52,7 @@ def test_jrn_02_1_vendor_updater_is_one_inno_chunk(realfiles: Path, tmp_path: Pa
     assert [(c.start_offset, c.end_offset) for c in found] == [(0, exe.stat().st_size)]
 
 
-@pytest.mark.xfail(reason="FR-INNO-03: FSD Phase 3 (inno handler)", run=False)
+@pytest.mark.xfail(reason="FR-INNO-03: FSD Phase 3 (inno handler)", strict=True)
 def test_jrn_02_2_installer_files_extracted(realfiles: Path, tmp_path: Path):
     run_unblob(realfiles / NAVX, tmp_path)
     assert list(tmp_path.rglob("navx2-mxp_4.0.447.hex"))
@@ -60,7 +60,7 @@ def test_jrn_02_2_installer_files_extracted(realfiles: Path, tmp_path: Path):
 
 @pytest.mark.xfail(
     reason="FR-INNO-04: FSD Phase 3 (inno handler; Intel HEX handler for recursion)",
-    run=False,
+    strict=True,
 )
 def test_jrn_02_3_firmware_payload_unpacked_further(realfiles: Path, tmp_path: Path):
     run_unblob(realfiles / NAVX, tmp_path)
