@@ -4,8 +4,6 @@ import importlib
 import struct
 from types import ModuleType
 
-import pytest
-
 from tests.conftest import FIXTURES
 
 FIXTURE = (FIXTURES / "mcuboot" / "standard.bin").read_bytes()
@@ -28,7 +26,6 @@ def with_flags(image: bytes, flags: int) -> bytes:
     return image[:16] + struct.pack("<I", flags) + image[20:]
 
 
-@pytest.mark.xfail(reason="FR-MCB-06: mcuboot handler absent", strict=True)
 def test_tc_mcb_06_signed_only_with_a_signature_tlv():
     info = mcuboot().image_info
     sha = (0x10, bytes(32))
@@ -38,7 +35,6 @@ def test_tc_mcb_06_signed_only_with_a_signature_tlv():
         assert info(with_tlv_area(FIXTURE, [sha, (sig_type, bytes(64))])).signed is True
 
 
-@pytest.mark.xfail(reason="FR-MCB-07: mcuboot handler absent", strict=True)
 def test_tc_mcb_07_encrypted_follows_the_flag_bits():
     info = mcuboot().image_info
     assert info(FIXTURE).encrypted is False

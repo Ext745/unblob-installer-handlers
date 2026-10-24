@@ -6,14 +6,27 @@ are wired into unblob.
 
 from unblob.models import Handler
 from unblob.plugins import hookimpl
+from unblob.report import Report
 
 from .dfuse import DfuSeHandler
 from .ihex import IntelHexHandler
+from .mcuboot import MCUbootHandler, MCUbootImageReport
 from .uf2 import UF2Handler
 
-HANDLERS: list[type[Handler]] = [UF2Handler, IntelHexHandler, DfuSeHandler]
+HANDLERS: list[type[Handler]] = [
+    UF2Handler,
+    IntelHexHandler,
+    DfuSeHandler,
+    MCUbootHandler,
+]
+REPORTS: list[type[Report]] = [MCUbootImageReport]
 
 
 @hookimpl
 def unblob_register_handlers() -> list[type[Handler]]:
     return HANDLERS
+
+
+@hookimpl
+def unblob_register_reports() -> list[type[Report]]:
+    return REPORTS

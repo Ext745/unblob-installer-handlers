@@ -35,7 +35,6 @@ def dumpinfo(imgtool: str, image: Path) -> dict:
     }
 
 
-@pytest.mark.xfail(reason="FR-MCB-09: mcuboot handler absent", strict=True)
 def test_tc_mcb_09_report_equals_imgtool_dumpinfo(realfiles: Path, tmp_path: Path):
     imgtool = shutil.which("imgtool")
     if imgtool is None:
