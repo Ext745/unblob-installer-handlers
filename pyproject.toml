@@ -72,5 +72,5 @@ parametrize-names-type = "csv"
 "attr".msg = "Use `attrs` (with an 's') instead"
 
 [tool.pyright]
-exclude = [".venv", "build", ".claude"]
+exclude = [".venv", "build", ".claude", ".devcontainer"]   # container wiring, not package code
 typeCheckingMode = "standard"
