@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "unblob-installer-handlers"
+dynamic = ["version"]
+description = "unblob handlers for Windows installers and MCU firmware containers"
+readme = "PLAN.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["unblob==26.6.4"]
+
+# FSD C-03: unblob discovers the plugin through this group.
+[project.entry-points.unblob_v1]
+installers = "unblob_installers"
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2", "ruff==0.15.14", "pyright==1.1.410"]
+
+[tool.hatch.version]
+path = "src/unblob_installers/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/unblob_installers"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+markers = [
+  "journey: the standard run, one test per step (testing/test-plan.yaml JRN-*)",
+]
+
+# FSD C-05: unblob 26.6.4's ruff and pyright configuration, copied unchanged
+# (onekey-sec/unblob@26.6.4 pyproject.toml), with first-party set to this package.
+[tool.ruff]
+target-version = "py310"
+extend-exclude = [".claude"]   # vendored harness skills, not this package
+
+[tool.ruff.lint]
+select = [
+  "A", "ARG", "B", "C4", "C90", "COM818", "D", "E", "F", "FBT", "G", "I", "N",
+  "PIE", "PL", "PT", "PTH", "RET", "RSE", "RUF", "S", "SIM", "SLF", "T10", "T20",
+  "TC", "TID251", "TRY", "UP", "W",
+]
+ignore = [
+  "A005", "B027", "D1", "D203", "D213", "E501", "N818", "PLC0414", "PLR09",
+  "PTH201", "RUF012", "S101", "S603", "S607", "TRY003", "TRY400",
+]
+
+[tool.ruff.lint.per-file-ignores]
+".github/*" = ["T201"]
+"tests/*" = ["FBT001", "FBT003"]
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["unblob_installers"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.lint.pylint]
+allow-magic-value-types = ["bytes", "int", "str"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+parametrize-names-type = "csv"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"attr".msg = "Use `attrs` (with an 's') instead"
+
+[tool.pyright]
+exclude = [".venv", "build", ".claude"]
+typeCheckingMode = "standard"

@@ -1,0 +1,42 @@
+name: lint + unit tests
+
+# Every job runs on the project's own runner (.devcontainer); there are no
+# hosted-runner minutes for this private repo. This gate covers the unit tier
+# only: integration fixtures and real-file tests join it as /build adds them.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench             # one job at a time on the runner next to the bench
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: [self-hosted, testbench]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Fresh venv with unblob 26.6.4 and the pinned dev tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/python -c "import importlib.metadata as m; print('unblob', m.version('unblob'))"
+
+      - name: ruff (unblob's configuration, FSD C-05)
+        run: |
+          .venv/bin/ruff check .
+          .venv/bin/ruff format --check .
+
+      - name: pyright (unblob's configuration, FSD C-05)
+        env:
+          PYRIGHT_PYTHON_IGNORE_WARNINGS: "1"
+        run: .venv/bin/pyright --pythonpath .venv/bin/python
+
+      - name: Unit tier
+        run: .venv/bin/pytest -q

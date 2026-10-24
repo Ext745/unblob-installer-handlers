@@ -1,0 +1,7 @@
+{
+  "name": "unblob-installer-handlers",
+  "dockerComposeFile": "compose.yaml",
+  "service": "dev",
+  "workspaceFolder": "/workspaces/unblob-installer-handlers",
+  "remoteUser": "ubuntu"
+}

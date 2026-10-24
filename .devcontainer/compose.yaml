@@ -1,0 +1,18 @@
+# Runs 24/7 next to the bench: `docker compose -f .devcontainer/compose.yaml up -d --build`.
+# Host network: the bench is 127.0.0.1:8080 and needs no API token from here.
+services:
+  dev:
+    build: .
+    image: unblob-installer-handlers-dev
+    container_name: unblob-installer-handlers-dev
+    network_mode: host
+    env_file: .env
+    environment:
+      TESTBENCH_URL: http://127.0.0.1:8080
+      REALFILES_DIR: /srv/realfiles
+    volumes:
+      - ..:/workspaces/unblob-installer-handlers
+      # Real vendor updaters and board builds (FSD D-4): not redistributable,
+      # so never in the repo. Read-only inside the container.
+      - /srv/unblob-realfiles:/srv/realfiles:ro
+    restart: unless-stopped
