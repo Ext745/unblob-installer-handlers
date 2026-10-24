@@ -22,6 +22,43 @@ give identical files. The script checks each fixture against its oracle
 | `mcuboot/standard.bin` | `imgtool` 2.5.0 | header 0x20, version `1.2.3+4`, unsigned (hash TLV only) | `imgtool verify` passes; image bytes equal the payload |
 | `nsis/standard.exe` | `makensis` 3.10 (`standard.nsi`), build time pinned | installs the payload as `firmware.bin` | `7z e` extracts `firmware.bin` identical to the payload |
 
-Not yet sourced: Inno Setup (no redistributable installer ≤ 1 MiB found),
-InstallShield, WiX/Burn (building one needs Windows). Setup Factory has no
-sample at all (`testing/test-plan.yaml` → `setup-factory-sample`).
+## Inno Setup
+
+Built by `tests/fixtures/build-inno.sh` from `standard.iss` (cut down from the
+Script Wizard template in
+[gist m-biernat/45dfe849…](https://gist.github.com/m-biernat/45dfe8494916e2d2f4fae408caaea3b1)).
+Each installer is compiled by that Inno version's own `ISCC.exe`, extracted
+with innoextract from the official installer, and run under Wine 10.0 in a
+throwaway container. Installers made with Inno Setup may be redistributed
+freely (Inno Setup licence); the payload is ours (MIT).
+
+| Fixture | Compiler (source, sha256) | Setup data version | Oracle check |
+|---|---|---|---|
+| `inno/standard-5.6.1-unicode.exe` | files.jrsoftware.org/is/5/innosetup-5.6.1-unicode.exe (`27d49e9b…b538`) | 5.6.0 (unicode) | innoextract yields `firmware.bin` identical to the payload |
+| `inno/standard-6.1.2.exe` | jrsoftware/issrc release is-6_1_2 (`a3ce1c40…35e7`) | 6.1.0 | same |
+| `inno/standard-6.4.3.exe` | is-6_4_3 (`f3c42116…723b`) | 6.4.3 | same |
+| `inno/standard-6.7.3.exe` | is-6_7_3 (`9c73c3ba…b732`) | 6.7.0 | same |
+| `inno/standard-7.1.0.exe` | is-7_1_0, x86 (`f9671174…4f60`) | 7.0.0.3 | same |
+
+**Not byte-reproducible.** Two builds differ in about 21 bytes inside the setup
+header (a build-time value and its checksum); size and extracted contents are
+identical. The committed bytes are the fixture; rebuild only to add a version.
+
+**Wine is a temporary build tool.** It is used by this script alone, during
+development (user decision 2026-10-24). When it is removed, regenerating these
+fixtures needs Windows (any machine with Inno Setup's ISCC.exe).
+
+## Size exceptions (FSD C-10, 1 MiB)
+
+| Fixture | Size | Why |
+|---|---|---|
+| `inno/standard-6.1.2.exe` | 1.52 MiB | Inno 6 setup loader and wizard images; no smaller output exists |
+| `inno/standard-6.4.3.exe` | 1.78 MiB | same |
+| `inno/standard-6.7.3.exe` | 2.06 MiB | same |
+| `inno/standard-7.1.0.exe` | 2.06 MiB | same |
+
+## Not yet sourced
+
+InstallShield and WiX/Burn (building them needs Windows; WiX under Wine is
+untried). Setup Factory has no sample at all (`testing/test-plan.yaml` →
+`setup-factory-sample`).
