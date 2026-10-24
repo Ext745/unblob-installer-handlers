@@ -1,5 +1,9 @@
 # Runs 24/7 next to the bench: `docker compose -f .devcontainer/compose.yaml up -d --build`.
 # Host network: the bench is 127.0.0.1:8080 and needs no API token from here.
+# A unique project name: every project keeps its compose file in .devcontainer/,
+# so the default name ("devcontainer") collides with other projects.
+name: unblob-installer-handlers
+
 services:
   dev:
     build: .
