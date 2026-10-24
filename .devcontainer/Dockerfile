@@ -41,12 +41,13 @@ RUN python3 -m venv /opt/tools-venv \
  && /opt/tools-venv/bin/pip install --no-cache-dir 'unblob==26.6.4' 'sfextract==0.0.8' \
       'imgtool==2.5.0' 'intelhex==2.3.0'
 
-# Oracles for tests (FSD §16.1): dfu-util and avr-objcopy from Ubuntu,
+# Oracles for tests (FSD §16.1): dfu-util and avr-objcopy from Ubuntu (and
+# makensis, which builds the NSIS fixture),
 # uf2conv.py with the uf2families.json this project vendors (FSD D-3), and
 # dfuse-pack.py from the dfu-util 0.11 release.
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      dfu-util=0.11-3build1 binutils-avr=2.43.50.20250108-1build1 \
+      dfu-util=0.11-3build1 binutils-avr=2.43.50.20250108-1build1 nsis=3.10-2ubuntu2 \
  && rm -rf /var/lib/apt/lists/*
 ARG UF2_REV=90e9741f217f5a40c98ba74d663e408041037578
 ARG DFU_UTIL_SHA256=b4b53ba21a82ef7e3d4c47df2952adf5fa494f499b6b0b57c58c5d04ae8ff19e
