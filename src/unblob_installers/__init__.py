@@ -7,9 +7,10 @@ are wired into unblob.
 from unblob.models import Handler
 from unblob.plugins import hookimpl
 
+from .ihex import IntelHexHandler
 from .uf2 import UF2Handler
 
-HANDLERS: list[type[Handler]] = [UF2Handler]
+HANDLERS: list[type[Handler]] = [UF2Handler, IntelHexHandler]
 
 
 @hookimpl

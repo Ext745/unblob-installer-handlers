@@ -24,12 +24,10 @@ def mutate(line_no: int, column: int, new: bytes) -> bytes:
     return b"\n".join(lines)
 
 
-@pytest.mark.xfail(reason="FR-HEX-02: ihex handler absent", strict=True)
 def test_tc_hex_02_valid_fixture_parses_to_its_eof():
     assert ihex().chunk_end(FIXTURE, 0) == len(FIXTURE)
 
 
-@pytest.mark.xfail(reason="FR-HEX-02: ihex handler absent", strict=True)
 @pytest.mark.parametrize(
     "line_no, column, new, what",
     [
@@ -46,7 +44,6 @@ def test_tc_hex_02_corrupted_record_is_not_claimed(line_no, column, new, what):
     assert ihex().chunk_end(data, 0) is None
 
 
-@pytest.mark.xfail(reason="FR-HEX-06: ihex handler absent", strict=True)
 def test_tc_hex_06_region_file_name():
     assert str(ihex().region_name(0x08000000)) == "0x08000000.bin"
     assert str(ihex().region_name(0x00007E00)) == "0x00007e00.bin"

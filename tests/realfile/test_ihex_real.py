@@ -11,7 +11,6 @@ from tests.conftest import run_unblob
 OPTIBOOT = Path("hex/optiboot_atmega328.hex")
 
 
-@pytest.mark.xfail(reason="FR-HEX-08: ihex handler absent", strict=True)
 def test_tc_hex_08_optiboot_regions_equal_avr_objcopy(realfiles: Path, tmp_path: Path):
     objcopy = shutil.which("avr-objcopy")
     if objcopy is None:
@@ -40,4 +39,11 @@ def test_tc_hex_08_optiboot_regions_equal_avr_objcopy(realfiles: Path, tmp_path:
         assert data == expected[address - base : address - base + len(data)], (
             region.name
         )
-    assert sum(r.stat().st_size for r in regions) == len(expected)
+    # Every data byte and nothing else: avr-objcopy fills gaps between regions,
+    # the handler does not (FSD OD-1), so count the data records' bytes instead.
+    data_bytes = sum(
+        int(line[1:3], 16)
+        for line in hexfile.read_text().splitlines()
+        if line[7:9] == "00"
+    )
+    assert sum(r.stat().st_size for r in regions) == data_bytes

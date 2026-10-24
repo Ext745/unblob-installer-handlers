@@ -2,14 +2,11 @@
 
 from pathlib import Path
 
-import pytest
-
 from tests.conftest import FIXTURES, chunks, run_unblob
 
 FIXTURE = FIXTURES / "ihex" / "standard.hex"
 
 
-@pytest.mark.xfail(reason="FR-HEX-01: ihex handler absent", strict=True)
 def test_tc_hex_01_chunk_from_first_colon_to_after_eof_line(tmp_path: Path):
     before = b"Release notes\n\nFirmware image follows: see below.\n"
     after = b"\nEnd of image. Checksums: see the header.\n"
@@ -28,7 +25,6 @@ def test_tc_hex_01_chunk_from_first_colon_to_after_eof_line(tmp_path: Path):
     ]
 
 
-@pytest.mark.xfail(reason="FR-HEX-05: ihex handler absent", strict=True)
 def test_tc_hex_05_one_region_at_the_type_04_base(tmp_path: Path, payload: bytes):
     run_unblob(FIXTURE, tmp_path)
 
