@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="UIH fixture" Language="1033" Version="1.0.0" Manufacturer="unblob-installer-handlers" UpgradeCode="6f1d2c3e-1a2b-4c5d-8e9f-0a1b2c3d4e5f">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
+    <MediaTemplate EmbedCab="yes" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="INSTALLFOLDER" Name="uih-fixture" />
+      </Directory>
+    </Directory>
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="Firmware" Guid="7a2b3c4d-5e6f-4a1b-9c2d-3e4f5a6b7c8d">
+        <File Id="FirmwareBin" Source="firmware.bin" KeyPath="no" />
+        <RegistryValue Root="HKCU" Key="Software\uih-fixture" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+      </Component>
+    </DirectoryRef>
+    <Feature Id="Main" Level="1"><ComponentRef Id="Firmware" /></Feature>
+  </Product>
+</Wix>

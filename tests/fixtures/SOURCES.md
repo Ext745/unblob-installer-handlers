@@ -57,8 +57,29 @@ fixtures needs Windows (any machine with Inno Setup's ISCC.exe).
 | `inno/standard-6.7.3.exe` | 2.06 MiB | same |
 | `inno/standard-7.1.0.exe` | 2.06 MiB | same |
 
-## Not yet sourced
+## WiX/Burn
 
-InstallShield and WiX/Burn (building them needs Windows; WiX under Wine is
-untried). Setup Factory has no sample at all (`testing/test-plan.yaml` →
-`setup-factory-sample`).
+`burn/standard.exe` is built by `tests/fixtures/build-burn.sh`. The script runs
+WiX 3.14.1 (`wix314-binaries.zip`, sha256 `6ac824e1…3d31`) under Wine 10.0 with
+Wine Mono 9.4.0 (`cf6173ae…cacb2`), in a throwaway container:
+- `burn-fixture.wxs` becomes an MSI that installs the payload as `firmware.bin`;
+- `burn-bundle.wxs` chains that MSI into a Burn bundle using
+  WixStandardBootstrapperApplication.
+
+**Licence.** WiX is MS-RL; bundles it produces may be redistributed. The
+payload is ours (MIT).
+
+**Oracle check.** The bundle has a `.wixburn` section and two CAB containers:
+UX `u0…`, and attached `a0`. `a0` is the MSI (magic `d0 cf 11 e0`), and the MSI
+yields `FirmwareBin` identical to the payload.
+
+**Not byte-reproducible.** WiX generates package GUIDs and timestamps, so the
+size varies by a few bytes. The committed bytes are the fixture.
+
+## Not sourced
+
+- **InstallShield.** No redistributable cabinet can be built without
+  InstallShield, which is commercial and Windows-only. The handler is
+  verified on real files only (`testing/test-plan.yaml` →
+  `installshield-fixture`).
+- **Setup Factory.** No sample at all (`setup-factory-sample`).
