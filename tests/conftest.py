@@ -62,3 +62,28 @@ def tree(root: Path) -> dict[str, str]:
         for p in root.rglob("*")
         if p.is_file()
     }
+
+
+BURN_NS = "{http://schemas.microsoft.com/wix/2008/Burn}"
+
+
+def burn_manifest(extracted: Path):
+    """Parse the bundle manifest (u0 member 0) beneath a Burn extraction directory."""
+    import xml.etree.ElementTree as ET  # noqa: PLC0415 - Burn tests only
+
+    return ET.parse(extracted / "u0.cab_extract" / "0").getroot()  # noqa: S314 - our fixture and a pinned real file
+
+
+def burn_container_file(manifest, container_id: str | None) -> str:
+    """Name the file FR-BURN-03 writes for a manifest Container id (None: UX)."""
+    if container_id is None:
+        return "u0.cab"
+    for c in manifest.iter(f"{BURN_NS}Container"):
+        if c.get("Id") == container_id:
+            return f"a{int(c.get('AttachedIndex')) - 1}.cab"
+    raise KeyError(container_id)
+
+
+def burn_hash(data: bytes) -> str:
+    """Burn's manifest Hash: upper-case hex SHA-1."""
+    return hashlib.sha1(data, usedforsecurity=False).hexdigest().upper()
