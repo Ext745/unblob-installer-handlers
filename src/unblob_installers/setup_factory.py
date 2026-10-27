@@ -1,0 +1,248 @@
+"""Setup Factory handler (FSD §8), for Setup Factory 8 to 10.
+
+The overlay after the PE's last section opens with a signature, then holds
+irsetup.exe, optionally lua5.1.dll, and a table of named files that includes
+the compressed script irsetup.dat. The installed files follow the table; only
+the script's CSetupFileData entries give their sizes, so the chunk end is
+found by decompressing the script and summing them. The layout follows
+sfextract's setupfactory8.py (MIT) with this project's Setup Factory 10
+patch. Extraction runs sfextract.
+"""
+
+import lzma
+import struct
+import subprocess
+import zlib
+from pathlib import Path
+
+from unblob.file_utils import InvalidInputFormat
+from unblob.models import (
+    ExtractError,
+    Extractor,
+    ExtractResult,
+    File,
+    Handler,
+    HandlerDoc,
+    HandlerType,
+    HexString,
+    Reference,
+    ValidChunk,
+)
+from unblob.report import ExtractCommandFailedReport
+
+from . import _blast
+from ._pe import certificate_end, overlay_start
+
+SIGNATURE = bytes.fromhex("e0e0e1e1e2e2e3e3e4e4e5e5e6e6e7e7")
+HEADER_SIZE = 26  # signature and 10 bytes nobody has decoded
+NAME_SIZE = 264
+LUA_DLL_HINT = 1000  # a file count above this is lua5.1.dll's size instead
+SCRIPT_NAME = b"irsetup.dat"
+SCRIPT_LIMIT = 64 * 1024 * 1024  # decompressed script; the sample's is 132 KiB
+VERSION_INFO = struct.pack("<I", 0xFEEF04BD)  # VS_FIXEDFILEINFO signature
+SUPPORTED_MAJORS = (8, 9, 10)
+
+
+class _Cursor:
+    def __init__(self, buf, pos: int, end: int):
+        self.buf, self.pos, self.end = buf, pos, end
+
+    def take(self, n: int) -> bytes:
+        if n < 0 or self.pos + n > self.end:
+            raise InvalidInputFormat("Setup Factory data runs past its end")
+        data = bytes(self.buf[self.pos : self.pos + n])
+        self.pos += n
+        return data
+
+    def skip(self, n: int) -> None:
+        self.take(n)
+
+    def unpack(self, fmt: str) -> int:
+        return struct.unpack(fmt, self.take(struct.calcsize(fmt)))[0]
+
+    def string(self) -> bytes:
+        return self.take(self.unpack("<B"))
+
+
+def runtime_version(buf, start: int, end: int) -> tuple[int, int]:
+    """FileVersion (major, minor) from the run-time's VS_FIXEDFILEINFO."""
+    at = bytes(buf[start:end]).find(VERSION_INFO)
+    if at == -1:
+        raise InvalidInputFormat("no version information")
+    (version_ms,) = struct.unpack_from("<I", buf, start + at + 8)
+    return version_ms >> 16, version_ms & 0xFFFF
+
+
+def decompress(data: bytes) -> bytes:
+    """Decompress a table file, detecting the method as sfextract does."""
+    try:
+        if data[:2] == b"\x00\x06":
+            return _blast.decompress(data, SCRIPT_LIMIT)
+        if data[:2] == b"\x5d\x00":
+            d = lzma.LZMADecompressor(lzma.FORMAT_ALONE)
+            return d.decompress(data, max_length=SCRIPT_LIMIT)
+        if data[:1] == b"\x18":
+            # One LZMA2 dictionary-size byte, then the 8-byte unpacked size.
+            dict_size = (2 | data[0] & 1) << (data[0] // 2 + 11)
+            lzma2 = {"id": lzma.FILTER_LZMA2, "dict_size": dict_size}
+            d = lzma.LZMADecompressor(lzma.FORMAT_RAW, filters=[lzma2])
+            return d.decompress(data[9:], max_length=SCRIPT_LIMIT)
+    except (lzma.LZMAError, ValueError) as e:
+        raise InvalidInputFormat(
+            f"Setup Factory script does not decompress: {e}"
+        ) from e
+    raise InvalidInputFormat("unknown Setup Factory compression")
+
+
+def _layout(version: tuple[int, int]) -> tuple[int, int]:
+    """Bytes after the destination directory, and the entry trailer."""
+    if version >= (10, 0):
+        return 12, 3
+    if version >= (9, 3):
+        return 11, 8
+    return 10, 8
+
+
+def _entry_size(c: _Cursor, after_dest: int, trailer: int) -> int:
+    """Read one CSetupFileData entry; its compressed size."""
+    for _ in range(6):  # source path, base name, directory, suffix, folder, description
+        c.string()
+    c.skip(72)  # sizes, attributes and three timestamps
+    c.string()  # destination directory
+    c.skip(after_dest)
+    for _ in range(5):  # shortcut location, comment, description, arguments, start dir
+        c.string()
+    c.skip(1)
+    c.string()  # icon path
+    c.skip(8)
+    c.string()  # font name
+    c.skip(16)  # compression and attribute flags
+    c.skip(2 * c.unpack("<H"))
+    c.string()  # condition
+    c.skip(2)
+    c.string()  # install type
+    c.string()
+    for _ in range(c.unpack("<H")):
+        c.string()  # package names
+    c.string()  # notes
+    size = c.unpack("<q")
+    if size < 0:
+        raise InvalidInputFormat("negative Setup Factory file size")
+    c.skip(4 + trailer)  # CRC and trailer
+    return size
+
+
+def entries_size(script: bytes, version: tuple[int, int]) -> int:
+    """Sum of the compressed sizes of the script's CSetupFileData entries."""
+    at = script.find(b"CSetupFileData")
+    if at < 8:  # count and class header precede the name
+        raise InvalidInputFormat("no CSetupFileData in the script")
+    c = _Cursor(script, at - 8, len(script))
+    count = c.unpack("<H")
+    c.skip(4)  # 0xFFFF, 0x0001: a new MFC class follows
+    if c.take(c.unpack("<H")) != b"CSetupFileData":
+        raise InvalidInputFormat("malformed CSetupFileData header")
+    c.skip(5)
+    after_dest, trailer = _layout(version)
+    return sum(_entry_size(c, after_dest, trailer) for _ in range(count))
+
+
+def _file_count(c: _Cursor) -> int:
+    """Skip irsetup.exe and lua5.1.dll if present; the table's file count."""
+    c.skip(c.unpack("<q"))  # irsetup.exe
+    count = c.unpack("<I")
+    if count > LUA_DLL_HINT:
+        c.pos -= 4
+        c.skip(c.unpack("<q"))  # lua5.1.dll
+        count = c.unpack("<I")
+    if count > LUA_DLL_HINT:
+        raise InvalidInputFormat("implausible Setup Factory file count")
+    return count
+
+
+def _read_script(c: _Cursor, count: int) -> bytes:
+    """Walk the file table to its end; the decompressed script."""
+    script = None
+    for _ in range(count):
+        name = c.take(NAME_SIZE).split(b"\0", 1)[0]
+        size = c.unpack("<q")
+        crc = c.unpack("<I")
+        c.skip(4)
+        data = c.take(size)
+        if name == SCRIPT_NAME:
+            script = decompress(data)
+            if crc and zlib.crc32(script) != crc:
+                raise InvalidInputFormat("Setup Factory script CRC mismatch")
+    if script is None:
+        raise InvalidInputFormat("no Setup Factory script")
+    return script
+
+
+def data_end(file: File, start: int) -> int:
+    """End of the last installed file's data in the installer at start."""
+    overlay = overlay_start(file, start)
+    if bytes(file[overlay : overlay + len(SIGNATURE)]) != SIGNATURE:
+        raise InvalidInputFormat("no Setup Factory overlay signature")
+    version = runtime_version(file, start, overlay)
+    if version[0] not in SUPPORTED_MAJORS:
+        raise InvalidInputFormat(f"Setup Factory {version[0]} is not supported")
+
+    c = _Cursor(file, overlay + HEADER_SIZE, len(file))
+    script = _read_script(c, _file_count(c))
+    end = c.pos + entries_size(script, version)
+    if end > len(file):
+        raise InvalidInputFormat("Setup Factory data runs past the end of the data")
+    return end
+
+
+class SetupFactoryExtractor(Extractor):
+    def get_dependencies(self) -> list[str]:
+        return ["sfextract"]
+
+    def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        command = ["sfextract", "-o", str(outdir), str(inpath)]
+        result = subprocess.run(command, capture_output=True, check=False)
+        # sfextract exits 0 when it finds no extractor (FR-SF-03).
+        if result.returncode != 0 or not result.stdout.startswith(b"Extracted "):
+            raise ExtractError(
+                ExtractCommandFailedReport(
+                    command=" ".join(command),
+                    stdout=result.stdout,
+                    stderr=result.stderr,
+                    exit_code=result.returncode,
+                )
+            )
+        return ExtractResult(reports=[])
+
+
+class SetupFactoryHandler(Handler):
+    NAME = "setup_factory"
+    PATTERNS = [HexString("4D 5A")]  # every PE; the overlay signature decides
+    EXTRACTOR = SetupFactoryExtractor()
+    DOC = HandlerDoc(
+        name="Setup Factory",
+        description="Setup Factory installer: a PE run-time with an overlay of the setup files and a script listing the installed files, extracted with sfextract.",
+        handler_type=HandlerType.EXECUTABLE,
+        vendor="Indigo Rose Software",
+        references=[
+            Reference(
+                title="Setup Factory",
+                url="https://www.indigorose.com/setup-factory/",
+            ),
+            Reference(
+                title="sfextract",
+                url="https://github.com/CybercentreCanada/sfextract",
+            ),
+        ],
+        limitations=[
+            "Setup Factory 7 and older are not recognised",
+            "Only Setup Factory 10 has been checked against a real installer",
+        ],
+    )
+
+    def calculate_chunk(self, file: File, start_offset: int) -> ValidChunk | None:
+        cert_end = certificate_end(file, start_offset)  # also proves a PE starts here
+        end = max(data_end(file, start_offset), cert_end)
+        if end > len(file):
+            raise InvalidInputFormat("certificate table runs past the end of the data")
+        return ValidChunk(start_offset=start_offset, end_offset=end)

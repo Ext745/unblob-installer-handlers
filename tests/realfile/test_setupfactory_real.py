@@ -1,5 +1,6 @@
-"""Setup Factory against the SF10 build in the real-file store (FSD §8, FR-SF-01/03)."""
+"""Setup Factory against the SF10 build in the real-file store (FSD §8, §17)."""
 
+import random
 import shutil
 import subprocess
 from pathlib import Path
@@ -11,7 +12,6 @@ from tests.conftest import chunks, run_unblob, tree
 SF10 = Path("setupfactory/setup-factory-10.4.0.0.exe")
 
 
-@pytest.mark.xfail(strict=True, reason="FR-SF-01: setup_factory handler absent")
 def test_tc_sf_01_sf10_is_one_setup_factory_chunk(realfiles: Path, tmp_path: Path):
     source = realfiles / SF10
     found = chunks(run_unblob(source, tmp_path, max_depth=1))
@@ -20,7 +20,6 @@ def test_tc_sf_01_sf10_is_one_setup_factory_chunk(realfiles: Path, tmp_path: Pat
     ]
 
 
-@pytest.mark.xfail(strict=True, reason="FR-SF-03: setup_factory handler absent")
 def test_tc_sf_03_sf10_extraction_equals_sfextract(
     realfiles: Path, tmp_path: Path, payload: bytes
 ):
@@ -38,3 +37,16 @@ def test_tc_sf_03_sf10_extraction_equals_sfextract(
 
     assert tree(out) == tree(oracle)
     assert (out / "%AppFolder%" / "firmware.bin").read_bytes() == payload
+
+
+def test_tc_pe_03_appended_bytes_not_absorbed(realfiles: Path, tmp_path: Path):
+    installer = (realfiles / SF10).read_bytes()
+    rng = random.Random(1703)  # noqa: S311 - fixed test data, not cryptography
+    sample = tmp_path / "padded.exe"
+    sample.write_bytes(installer + rng.randbytes(4096))
+
+    found = chunks(run_unblob(sample, tmp_path / "x", max_depth=1))
+
+    assert [(c.handler_name, c.start_offset, c.end_offset) for c in found] == [
+        ("setup_factory", 0, len(installer))
+    ]
