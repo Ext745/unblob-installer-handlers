@@ -7,9 +7,11 @@ the oracle (the handler itself runs unshield, so its output is not the oracle).
 import hashlib
 import random
 import shutil
+import tarfile
 from pathlib import Path
 
 import pytest
+from unblob.report import ExtractCommandFailedReport, MultiFileReport
 
 from tests.conftest import chunks, run_unblob
 
@@ -67,3 +69,48 @@ def test_tc_isc_03_all_files_match_the_md5_list(realfiles: Path, tmp_path: Path)
         if p.is_file() and str(p.relative_to(out)) in expected
     }
     assert found == expected
+
+
+AVIGO = Path("installshield/avigomanager")
+
+
+def tar_of(path: Path, files: list[Path]) -> Path:
+    with tarfile.open(path, "w") as tar:
+        for f in files:
+            tar.add(f, arcname=f"set/{f.name}")
+    return path
+
+
+def test_tc_isc_04_multi_volume_set_extracted_once(realfiles: Path, tmp_path: Path):
+    if shutil.which("unshield") is None:
+        pytest.skip("precondition unmet: unshield (extractors) not installed")
+    volumes = sorted((realfiles / AVIGO).glob("data*.cab"))
+    expected = {
+        line.split(maxsplit=1)[1].removeprefix("./"): line.split()[0]
+        for line in (realfiles / AVIGO / "expected.md5").read_text().splitlines()
+        if line.strip()
+    }
+
+    # Directory handlers run on directories unblob extracts, as when a set is
+    # unpacked from an installer: hand it the set inside a tar.
+    run_unblob(tar_of(tmp_path / "complete.tar", volumes), tmp_path / "x", max_depth=2)
+    (manager,) = list((tmp_path / "x").rglob("AvigoMgr.exe"))
+    out = manager.parent.parent
+    found = {
+        str(p.relative_to(out)): hashlib.md5(p.read_bytes()).hexdigest()  # noqa: S324 - oracle is md5
+        for p in out.rglob("*")
+        if p.is_file()
+    }
+    assert found == expected  # every file once, nothing else
+
+    # Must NOT: a set missing its last volume extracted partially as success.
+    partial = tar_of(tmp_path / "partial.tar", volumes[:-1])
+    result = run_unblob(partial, tmp_path / "y", max_depth=2)
+    assert not list((tmp_path / "y").rglob("AvigoMgr.exe"))
+    (multi,) = [
+        r for t in result.results for r in t.reports if isinstance(r, MultiFileReport)
+    ]
+    assert multi.handler_name == "installshield_set"
+    assert any(
+        isinstance(r, ExtractCommandFailedReport) for r in multi.extraction_reports
+    )

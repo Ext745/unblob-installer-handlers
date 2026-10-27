@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 import pytest
-from unblob.handlers import BUILTIN_HANDLERS
+from unblob.handlers import BUILTIN_DIR_HANDLERS, BUILTIN_HANDLERS
 from unblob.models import ProcessResult
 from unblob.processing import DEFAULT_DEPTH, ExtractionConfig, process_file
 from unblob.report import ChunkReport
@@ -44,6 +44,7 @@ def run_unblob(
         randomness_depth=0,
         keep_extracted_chunks=True,
         handlers=(*BUILTIN_HANDLERS, *unblob_installers.HANDLERS),
+        dir_handlers=(*BUILTIN_DIR_HANDLERS, *unblob_installers.DIR_HANDLERS),
         max_depth=max_depth,
     )
     return process_file(config, path)

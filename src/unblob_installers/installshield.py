@@ -1,8 +1,11 @@
 """InstallShield cabinet handler (FSD §6).
 
 Format: as read by unshield (https://github.com/twogood/unshield, MIT): a
-common header, a cabinet descriptor with a file table, and file data. Only
-the version 5 layout (header version 0x01xxxxxx, major 0 or 5) is handled.
+common header, a cabinet descriptor with a file table, and file data. The
+file handler takes self-contained cabinets of the version 5 layout (header
+version 0x01xxxxxx, major 0 or 5). A multi-volume set (data1.hdr and/or
+data1.cab ... dataN.cab in one directory) is taken by the directory handler
+and given to unshield whole, whatever its version (FR-ISC-04).
 """
 
 import shutil
@@ -13,14 +16,18 @@ from pathlib import Path
 
 from unblob.file_utils import InvalidInputFormat
 from unblob.models import (
+    DirectoryExtractor,
+    DirectoryHandler,
     ExtractError,
     Extractor,
     ExtractResult,
     File,
+    Glob,
     Handler,
     HandlerDoc,
     HandlerType,
     HexString,
+    MultiFile,
     Reference,
     ValidChunk,
 )
@@ -98,6 +105,33 @@ def cabinet_end(buf, start: int) -> int:
     return end
 
 
+def run_unshield(target: Path, outdir: Path) -> None:
+    """Extract with unshield into outdir, only if it succeeds.
+
+    Some cabinets need unshield's old-compression mode (-O); unshield's own
+    tests mark the Avigo Manager set so. A failed run (a missing volume,
+    say) leaves nothing in outdir.
+    """
+    result = None
+    for options in ([], ["-O"]):
+        with tempfile.TemporaryDirectory() as tmp:
+            command = ["unshield", *options, "-d", tmp, "x", str(target)]
+            result = subprocess.run(command, capture_output=True, check=False)
+            if result.returncode == 0:
+                for item in Path(tmp).iterdir():
+                    shutil.move(item, outdir / item.name)
+                return
+    assert result is not None
+    raise ExtractError(
+        ExtractCommandFailedReport(
+            command=" ".join(result.args),
+            stdout=result.stdout,
+            stderr=result.stderr,
+            exit_code=result.returncode,
+        )
+    )
+
+
 class UnshieldExtractor(Extractor):
     def get_dependencies(self) -> list[str]:
         return ["unshield"]
@@ -107,17 +141,7 @@ class UnshieldExtractor(Extractor):
         with tempfile.TemporaryDirectory() as tmp:
             cab = Path(tmp) / "data1.cab"
             shutil.copyfile(inpath, cab)
-            command = ["unshield", "-d", str(outdir), "x", str(cab)]
-            result = subprocess.run(command, capture_output=True, check=False)
-        if result.returncode != 0:
-            raise ExtractError(
-                ExtractCommandFailedReport(
-                    command=" ".join(command),
-                    stdout=result.stdout,
-                    stderr=result.stderr,
-                    exit_code=result.returncode,
-                )
-            )
+            run_unshield(cab, outdir)
         return ExtractResult(reports=[])
 
 
@@ -138,8 +162,8 @@ class InstallShieldHandler(Handler):
             ),
         ],
         limitations=[
-            "Only the version 5 cabinet layout",
-            "Multi-volume sets (data1.hdr + dataN.cab, or spanned dataN.cab) are not handled",
+            "Only the version 5 cabinet layout as a single file",
+            "Multi-volume sets are taken by installshield_set",
         ],
     )
 
@@ -147,3 +171,64 @@ class InstallShieldHandler(Handler):
         return ValidChunk(
             start_offset=start_offset, end_offset=cabinet_end(file, start_offset)
         )
+
+
+def _volume_number(path: Path) -> int | None:
+    """N for dataN.cab (any case), else None."""
+    name = path.name.lower()
+    if name.startswith("data") and name.endswith(".cab") and name[4:-4].isdigit():
+        return int(name[4:-4])
+    return None
+
+
+def _is_cabinet(path: Path) -> bool:
+    with path.open("rb") as f:
+        return f.read(4) == b"ISc("
+
+
+class UnshieldSetExtractor(DirectoryExtractor):
+    def get_dependencies(self) -> list[str]:
+        return ["unshield"]
+
+    def extract(self, paths: list[Path], outdir: Path) -> ExtractResult | None:
+        # unshield finds the volumes by their lower-case names beside data1.
+        with tempfile.TemporaryDirectory() as tmp:
+            for path in paths:
+                shutil.copyfile(path, Path(tmp) / path.name.lower())
+            header = Path(tmp) / "data1.hdr"
+            run_unshield(header if header.exists() else Path(tmp) / "data1.cab", outdir)
+        return ExtractResult(reports=[])
+
+
+class InstallShieldSetHandler(DirectoryHandler):
+    NAME = "installshield_set"
+    PATTERN = Glob("[dD][aA][tT][aA]1.[hH][dD][rR]", "[dD][aA][tT][aA]1.[cC][aA][bB]")
+    EXTRACTOR = UnshieldSetExtractor()
+    DOC = HandlerDoc(
+        name="InstallShield multi-volume set",
+        description="InstallShield cabinet set: data1.hdr and/or data1.cab ... dataN.cab in one directory, extracted as one set with unshield.",
+        handler_type=HandlerType.ARCHIVE,
+        vendor="Flexera (InstallShield)",
+        references=[
+            Reference(title="unshield", url="https://github.com/twogood/unshield"),
+        ],
+        limitations=["Volumes must be named dataN.cab and numbered without gaps"],
+    )
+
+    def calculate_multifile(self, file: Path) -> MultiFile | None:
+        siblings = {p.name.lower(): p for p in file.parent.iterdir() if p.is_file()}
+        header = siblings.get("data1.hdr")
+        if file.name.lower() == "data1.cab" and header is not None:
+            return None  # the set starts at data1.hdr
+        if not _is_cabinet(file):
+            return None
+        volumes = []
+        for n in range(1, len(siblings) + 1):
+            volume = siblings.get(f"data{n}.cab")
+            if volume is None or not _is_cabinet(volume):
+                break
+            volumes.append(volume)
+        if header is None and len(volumes) < 2:
+            return None
+        paths = ([header] if header is not None else []) + volumes
+        return MultiFile(name=file.stem, paths=paths)
