@@ -83,4 +83,6 @@ size varies by a few bytes. The committed bytes are the fixture.
   InstallShield, which is commercial and Windows-only. The handler is
   verified on real files only (`testing/test-plan.yaml` →
   `installshield-fixture`).
-- **Setup Factory.** No sample at all (`setup-factory-sample`).
+- **Setup Factory.** No redistributable sample. The only one is a Setup
+  Factory 10.4 trial build in the real-file store (`setup-factory-sample`),
+  so the handler is verified on real files only.
