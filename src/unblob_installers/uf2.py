@@ -71,7 +71,8 @@ def parse_block(raw: bytes) -> Block | None:
 @cache
 def _family_names() -> dict[int, str]:
     # uf2families.json from microsoft/uf2 at 90e9741 (FSD D-3).
-    table = json.loads(files(__package__).joinpath("data/uf2families.json").read_text())
+    data = files("unblob_installers").joinpath("data/uf2families.json")
+    table = json.loads(data.read_text())
     return {int(entry["id"], 16): entry["short_name"] for entry in table}
 
 

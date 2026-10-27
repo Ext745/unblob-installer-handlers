@@ -2,12 +2,18 @@
 
 import importlib.metadata
 import json
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 BIN = Path(sys.executable).parent  # the environment under test
+ROOT = Path(__file__).parents[2]
+PY310 = Path("/opt/python3.10/bin/python3")  # pinned in .devcontainer/Dockerfile
+WHEELS_310 = Path("/opt/wheels-py310")  # offline wheelhouse for it
 
 
 def test_tc_con_01_unblob_pinned_to_26_6_4():
@@ -42,3 +48,30 @@ def test_tc_con_04_external_tools_are_the_pinned_versions():
     for tool in ("unshield", "innoextract", "sfextract", "7z"):
         assert f"    {tool} " in listing, tool
     assert "srec_cat" not in listing  # Intel HEX needs no external tool
+
+
+@pytest.mark.skipif(
+    os.environ.get("UIH_PY310_RUN") == "1", reason="inside the 3.10 run it starts"
+)
+def test_tc_con_02_suites_pass_under_3_10_and_3_14(tmp_path: Path):
+    # The 3.14 half is this run; the 3.10 half runs the same suites in a
+    # fresh venv built offline from the image's wheelhouse.
+    assert sys.version_info[:2] == (3, 14)
+    if not PY310.is_file():
+        pytest.skip("precondition unmet: no CPython 3.10 (python-3.10)")
+    venv = tmp_path / "py310"
+    subprocess.run([str(PY310), "-m", "venv", str(venv)], check=True)
+    python = str(venv / "bin" / "python")
+    install = [python, "-m", "pip", "install", "-q", "--no-index"]
+    install += ["--find-links", str(WHEELS_310), "-e", f"{ROOT}[dev]"]
+    subprocess.run(install, check=True)
+    suites = ["tests/unit", "tests/integration"]
+    run = subprocess.run(
+        [python, "-m", "pytest", "-q", "-p", "no:cacheprovider", *suites],
+        cwd=ROOT,
+        env={**os.environ, "UIH_PY310_RUN": "1"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert run.returncode == 0, run.stdout[-4000:] + run.stderr[-2000:]

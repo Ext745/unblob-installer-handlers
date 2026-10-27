@@ -45,6 +45,20 @@ RUN python3 -m venv /opt/tools-venv \
       "sfextract @ git+https://github.com/Ext745/sfextract@${SFEXTRACT_REV}" \
       'imgtool==2.5.0' 'intelhex==2.3.0'
 
+# CPython 3.10 for C-02's lower bound: Ubuntu 26.04 packages no 3.10, so a
+# pinned python-build-standalone build. TC-CON-02 builds a venv from it and
+# runs the unit and integration suites; the wheelhouse makes that install
+# offline. Never on PATH: handlers and the 3.14 suite do not see it.
+ARG PY310_BUILD=20261009
+ARG PY310_SHA256=1780de9ddda04e956d2a4a0ad09b7f5667d92f4f12cd0881ec939de5d542903f
+RUN curl -fsSL -o /tmp/py310.tgz \
+      "https://github.com/astral-sh/python-build-standalone/releases/download/${PY310_BUILD}/cpython-3.10.22%2B${PY310_BUILD}-x86_64-unknown-linux-gnu-install_only.tar.gz" \
+ && echo "${PY310_SHA256}  /tmp/py310.tgz" | sha256sum -c - \
+ && mkdir -p /opt/python3.10 && tar xzf /tmp/py310.tgz -C /opt/python3.10 --strip-components=1 \
+ && rm /tmp/py310.tgz \
+ && /opt/python3.10/bin/python3 -m pip wheel -q --no-cache-dir -w /opt/wheels-py310 \
+      'unblob==26.6.4' 'pytest==8.4.2' 'ruff==0.15.14' 'pyright==1.1.410' 'hatchling==1.27.0' 'editables==0.5'
+
 # Oracles for tests (FSD §16.1): dfu-util and avr-objcopy from Ubuntu (and
 # makensis, which builds the NSIS fixture),
 # uf2conv.py with the uf2families.json this project vendors (FSD D-3), and
