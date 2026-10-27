@@ -28,10 +28,18 @@ imgtool sign --header-size 0x20 --pad-header --align 4 --version 1.2.3+4 --slot-
 imgtool verify mcuboot/standard.bin | tail -1
 python3 -c "import sys; d=open(sys.argv[1],\"rb\").read(); sys.exit(0 if d[0x20:0x20+4096]==open(\"/tmp/firmware.bin\",\"rb\").read() else 1)" mcuboot/standard.bin && echo "mcuboot: image bytes identical"
 
+# MCUboot, encrypted (FR-MCB-08): AES-128 with a throwaway X25519 key. The AES key
+# is random per build, so this file is not reproducible; the committed bytes are
+# the fixture.
+imgtool keygen -k /tmp/enc.pem -t x25519
+imgtool sign --header-size 0x20 --pad-header --align 4 --version 1.2.3+4 --slot-size 0x10000 -E /tmp/enc.pem /tmp/firmware.bin mcuboot/encrypted.bin >/dev/null
+imgtool dumpinfo mcuboot/encrypted.bin | grep -q "flags: *ENCRYPTED_AES128" && echo "mcuboot: encrypted image flagged ENCRYPTED_AES128"
+python3 -c "import sys; d=open(sys.argv[1],\"rb\").read(); sys.exit(1 if d[0x20:0x20+4096]==open(\"/tmp/firmware.bin\",\"rb\").read() else 0)" mcuboot/encrypted.bin && echo "mcuboot: encrypted image bytes differ from the payload"
+
 # NSIS: makensis 3.10; build time and file mtime pinned so the output is reproducible
 mkdir -p /tmp/nsisbuild && cp standard.nsi /tmp/nsisbuild/ && cp /tmp/firmware.bin /tmp/nsisbuild/firmware.bin
 touch -d @1700000000 /tmp/nsisbuild/firmware.bin
 (cd /tmp/nsisbuild && SOURCE_DATE_EPOCH=1700000000 makensis -V2 standard.nsi >/dev/null) && cp /tmp/nsisbuild/standard.exe nsis/standard.exe
 7z e -y -bd -o/tmp/nsisout nsis/standard.exe firmware.bin >/dev/null && cmp /tmp/firmware.bin /tmp/nsisout/firmware.bin && echo "nsis: payload extracted identical"
 '
-cd "$HERE" && sha256sum */standard.* && ls -l */standard.* | awk '{print $5, $9}'
+cd "$HERE" && sha256sum */standard.* mcuboot/encrypted.bin && ls -l */standard.* mcuboot/encrypted.bin | awk '{print $5, $9}'

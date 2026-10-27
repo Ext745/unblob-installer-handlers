@@ -11,7 +11,7 @@ cannot occur by chance.
 **Licence:** MIT (this repository). Redistributable under unblob's test suite.
 
 **Rebuild:** `tests/fixtures/build.sh`. Output is reproducible: two builds
-give identical files. The script checks each fixture against its oracle
+give identical files, except `mcuboot/encrypted.bin` (see its row). The script checks each fixture against its oracle
 (FSD §16.1) before printing its hash.
 
 | Fixture | Built with | Content | Oracle check |
@@ -20,6 +20,7 @@ give identical files. The script checks each fixture against its oracle
 | `ihex/standard.hex` | `avr-objcopy` (binutils-avr 2.43.50) | payload at `0x08000000` | HEX → bin round trip identical |
 | `dfuse/standard.dfu` | `dfuse-pack.py` (dfu-util 0.11) | one target, one element at `0x08000000`, VID/PID `0483:df11` | `dfu-suffix -c` accepts suffix and CRC |
 | `mcuboot/standard.bin` | `imgtool` 2.5.0 | header 0x20, version `1.2.3+4`, unsigned (hash TLV only) | `imgtool verify` passes; image bytes equal the payload |
+| `mcuboot/encrypted.bin` | `imgtool` 2.5.0, `-E` with a throwaway X25519 key | as `standard.bin`, image AES-128 encrypted (ENCX25519 TLV); **not reproducible**: the AES key is random per build, so the committed bytes are the fixture | `imgtool dumpinfo` reports `ENCRYPTED_AES128`; image bytes differ from the payload |
 | `nsis/standard.exe` | `makensis` 3.10 (`standard.nsi`), build time pinned | installs the payload as `firmware.bin` | `7z e` extracts `firmware.bin` identical to the payload |
 
 ## Inno Setup

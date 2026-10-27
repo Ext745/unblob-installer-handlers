@@ -1,6 +1,11 @@
 """MCUboot handler run by unblob (FSD §13)."""
 
+import re
+import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from tests.conftest import FIXTURES, chunks, run_unblob
 
@@ -52,3 +57,34 @@ def test_tc_mcb_05_report_version_load_address_flags(tmp_path: Path):
         0,
         0,
     )
+
+
+def test_tc_mcb_08_encrypted_image_written_as_ciphertext(
+    tmp_path: Path, payload: bytes
+):
+    imgtool = shutil.which("imgtool")
+    if imgtool is None:
+        pytest.skip("precondition unmet: imgtool (oracles) not installed")
+    encrypted = FIXTURES / "mcuboot" / "encrypted.bin"
+    info = subprocess.run(
+        [imgtool, "dumpinfo", str(encrypted)],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert re.search(r"^flags:\s+ENCRYPTED_AES128", info, re.M)
+    header_size, image_size = (
+        int(m[1], 16)
+        for m in (
+            re.search(rf"^{f}:\s+(0x[0-9a-f]+)", info, re.M)
+            for f in ("hdr_size", "img_size")
+        )
+        if m
+    )
+
+    run_unblob(encrypted, tmp_path)
+    image = next(tmp_path.rglob("image.bin")).read_bytes()
+
+    data = encrypted.read_bytes()
+    assert image == data[header_size : header_size + image_size]
+    assert image != payload
