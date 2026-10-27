@@ -15,6 +15,7 @@ from .installshield import InstallShieldHandler
 from .mcuboot import MCUbootHandler, MCUbootImageReport
 from .setup_factory import SetupFactoryHandler
 from .uf2 import UF2Handler
+from .wix_burn import WixBurnHandler
 
 HANDLERS: list[type[Handler]] = [
     UF2Handler,
@@ -24,6 +25,7 @@ HANDLERS: list[type[Handler]] = [
     InstallShieldHandler,
     InnoSetupHandler,
     SetupFactoryHandler,
+    WixBurnHandler,
 ]
 REPORTS: list[type[Report]] = [MCUbootImageReport]
 

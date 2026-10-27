@@ -4,8 +4,6 @@ import importlib
 import struct
 from types import ModuleType
 
-import pytest
-
 
 def wix_burn() -> ModuleType:
     # Imported per test, so the file is collected before the module exists.
@@ -27,7 +25,6 @@ def header(stub: int, sig: tuple[int, int], sizes: list[int]) -> bytes:
     )
 
 
-@pytest.mark.xfail(strict=True, reason="FR-BURN-04: wix_burn handler absent")
 def test_tc_burn_07_container_walk_three_attached():
     walk = wix_burn().containers
     assert walk(header(0x1000, (0, 0), [100, 10, 20, 30])) == [

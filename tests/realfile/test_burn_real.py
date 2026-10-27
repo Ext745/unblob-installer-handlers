@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from tests.conftest import (
     BURN_NS,
     burn_container_file,
@@ -16,7 +14,6 @@ from tests.conftest import (
 VC_REDIST = Path("burn/vc_redist.x64.exe")
 
 
-@pytest.mark.xfail(strict=True, reason="FR-BURN-04: wix_burn handler absent")
 def test_tc_burn_06_signed_bundle_containers(realfiles: Path, tmp_path: Path):
     source = realfiles / VC_REDIST
     result = run_unblob(source, tmp_path, max_depth=2)
@@ -33,7 +30,6 @@ def test_tc_burn_06_signed_bundle_containers(realfiles: Path, tmp_path: Path):
         assert burn_hash(data) == c.get("Hash")
 
 
-@pytest.mark.xfail(strict=True, reason="FR-BURN-05: wix_burn handler absent")
 def test_tc_burn_05_every_embedded_payload_extracted(realfiles: Path, tmp_path: Path):
     run_unblob(realfiles / VC_REDIST, tmp_path, max_depth=2)
     (out,) = [p for p in tmp_path.iterdir() if p.is_dir()]
