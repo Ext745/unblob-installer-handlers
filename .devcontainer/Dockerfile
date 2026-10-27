@@ -35,10 +35,14 @@ RUN apt-get update \
       libboost-iostreams1.90.0 libboost-filesystem1.90.0 libboost-program-options1.90.0 liblzma5 \
  && rm -rf /var/lib/apt/lists/*
 
-# sfextract (FSD C-04) next to unblob, so the handlers find it on PATH.
+# sfextract (FSD C-04) next to unblob, so the handlers find it on PATH: 0.0.8
+# plus Setup Factory 10 support, pinned by commit on this project's fork until
+# an upstream release contains it (FSD §16.1, C-11).
 # imgtool and intelhex are test oracles (FSD §16.1), never called by a handler.
+ARG SFEXTRACT_REV=ca5c3a65485f6c6c3731f81207e613e17a8f29f4
 RUN python3 -m venv /opt/tools-venv \
- && /opt/tools-venv/bin/pip install --no-cache-dir 'unblob==26.6.4' 'sfextract==0.0.8' \
+ && /opt/tools-venv/bin/pip install --no-cache-dir 'unblob==26.6.4' \
+      "sfextract @ git+https://github.com/Ext745/sfextract@${SFEXTRACT_REV}" \
       'imgtool==2.5.0' 'intelhex==2.3.0'
 
 # Oracles for tests (FSD §16.1): dfu-util and avr-objcopy from Ubuntu (and
