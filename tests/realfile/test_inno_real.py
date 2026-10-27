@@ -23,7 +23,6 @@ def top_level(result, source: Path) -> list:
     ]
 
 
-@pytest.mark.xfail(reason="FR-PE-01: inno handler absent", strict=True)
 @pytest.mark.parametrize("installer", [NAVX, IMAGER], ids=["navx", "imager"])
 def test_tc_pe_01_signed_installer_chunk_includes_certificate(
     realfiles: Path, tmp_path: Path, installer: Path
@@ -42,7 +41,6 @@ def test_tc_pe_01_signed_installer_chunk_includes_certificate(
     ] == [("ChunkReport", "inno", 0, source.stat().st_size)]
 
 
-@pytest.mark.xfail(reason="FR-INNO-04: inno handler absent", strict=True)
 def test_tc_inno_04_real_installers(realfiles: Path, tmp_path: Path):
     innoextract = shutil.which("innoextract")
     if innoextract is None:

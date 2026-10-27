@@ -10,6 +10,7 @@ from unblob.report import Report
 
 from .dfuse import DfuSeHandler
 from .ihex import IntelHexHandler
+from .inno import InnoSetupHandler
 from .installshield import InstallShieldHandler
 from .mcuboot import MCUbootHandler, MCUbootImageReport
 from .uf2 import UF2Handler
@@ -20,6 +21,7 @@ HANDLERS: list[type[Handler]] = [
     DfuSeHandler,
     MCUbootHandler,
     InstallShieldHandler,
+    InnoSetupHandler,
 ]
 REPORTS: list[type[Report]] = [MCUbootImageReport]
 

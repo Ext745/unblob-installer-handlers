@@ -1,5 +1,6 @@
 """Shared test helpers: unblob runs with this package's handlers loaded."""
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -52,3 +53,12 @@ def chunks(result: ProcessResult) -> list[ChunkReport]:
     return [
         r for task in result.results for r in task.reports if isinstance(r, ChunkReport)
     ]
+
+
+def tree(root: Path) -> dict[str, str]:
+    """Every file beneath root, relative path to SHA-256."""
+    return {
+        str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in root.rglob("*")
+        if p.is_file()
+    }

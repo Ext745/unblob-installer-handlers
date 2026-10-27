@@ -4,12 +4,14 @@ JRN-01: a board UF2 through the plugin. JRN-02: a vendor Inno Setup updater
 (FSD Phase 3; needs PR #1255's PE handler and the Inno handler).
 """
 
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
 from unblob.plugins import UnblobPluginManager
 
-from tests.conftest import chunks, run_unblob
+from tests.conftest import chunks, run_unblob, tree
 from tests.uf2image import payload_image
 
 pytestmark = pytest.mark.journey
@@ -43,26 +45,36 @@ def test_jrn_01_3_region_equals_build_bin(realfiles: Path, tmp_path: Path):
     assert region[: len(build)] == build
 
 
-@pytest.mark.xfail(
-    reason="FR-INNO-01, FR-PE-01: FSD Phase 3 (inno handler, PR #1255)", strict=True
-)
 def test_jrn_02_1_vendor_updater_is_one_inno_chunk(realfiles: Path, tmp_path: Path):
     exe = realfiles / NAVX
-    found = [c for c in chunks(run_unblob(exe, tmp_path)) if c.handler_name == "inno"]
+    found = [
+        c
+        for c in chunks(run_unblob(exe, tmp_path, max_depth=1))
+        if c.handler_name == "inno"
+    ]
     assert [(c.start_offset, c.end_offset) for c in found] == [(0, exe.stat().st_size)]
 
 
-@pytest.mark.xfail(reason="FR-INNO-03: FSD Phase 3 (inno handler)", strict=True)
 def test_jrn_02_2_installer_files_extracted(realfiles: Path, tmp_path: Path):
-    run_unblob(realfiles / NAVX, tmp_path)
-    assert list(tmp_path.rglob("navx2-mxp_4.0.447.hex"))
+    innoextract = shutil.which("innoextract")
+    if innoextract is None:
+        pytest.skip("precondition unmet: innoextract (extractors) not installed")
+    oracle = tmp_path / "oracle"
+    subprocess.run(
+        [innoextract, "-e", "-s", "-d", str(oracle), str(realfiles / NAVX)],
+        check=True,
+    )
+    run_unblob(realfiles / NAVX, tmp_path / "x", max_depth=1)
+    (out,) = [p for p in (tmp_path / "x").iterdir() if p.is_dir()]
+
+    # Same file set and SHA-256 per file as innoextract -e, payload included.
+    found = tree(out)
+    assert found == tree(oracle)
+    assert any(name.endswith("/navx2-mxp_4.0.447.hex") for name in found)
 
 
-@pytest.mark.xfail(
-    reason="FR-INNO-04: FSD Phase 3 (inno handler; Intel HEX handler for recursion)",
-    strict=True,
-)
 def test_jrn_02_3_firmware_payload_unpacked_further(realfiles: Path, tmp_path: Path):
-    run_unblob(realfiles / NAVX, tmp_path)
+    # Depth 2: the installer, then the .hex inside it (deeper costs ~20 minutes).
+    run_unblob(realfiles / NAVX, tmp_path, max_depth=2)
     hexfile = next(tmp_path.rglob("navx2-mxp_4.0.447.hex"))
     assert list(hexfile.parent.rglob("navx2-mxp_4.0.447.hex_extract/*.bin"))
