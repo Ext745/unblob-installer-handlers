@@ -1,9 +1,9 @@
 name: release
 
 # On a version tag: build -> verify (the journey on THIS run's wheel) ->
-# release. A red or not-done journey publishes nothing.
-# Has never run. The journey tests (tests/journey, marker "journey") do not
-# exist yet, so verify fails until /build writes them: push no tag before then.
+# release. A red or not-done journey publishes nothing: a skipped step (the
+# real-file store missing, say) fails verify too. workflow_dispatch runs build
+# and verify only, as the dry run of the release path.
 # REALFILES_DIR is the devcontainer's read-only mount of the real files
 # (testing/test-plan.yaml capability realfiles-store).
 
@@ -57,7 +57,18 @@ jobs:
         run: |
           python3 -m venv .verify-venv
           .verify-venv/bin/pip install -q dist/*.whl 'pytest==8.4.2'
-          .verify-venv/bin/pytest tests/journey -m journey --realfiles "$REALFILES_DIR"
+          # The package under test is the wheel, not the checkout's src/.
+          .verify-venv/bin/python -c "import unblob_installers as u; print(u.__file__); assert '/.verify-venv/' in u.__file__"
+          .verify-venv/bin/pytest tests/journey -m journey --realfiles "$REALFILES_DIR" --junitxml=journey.xml
+          # Every journey step ran and passed: none skipped, none missing.
+          .verify-venv/bin/python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse("journey.xml").getroot()
+          suite = root if root.tag == "testsuite" else root[0]
+          counts = {k: int(suite.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
+          print(counts)
+          assert counts["tests"] >= 6 and counts["failures"] + counts["errors"] + counts["skipped"] == 0
+          PY
 
   release:
     if: startsWith(github.ref, 'refs/tags/')
