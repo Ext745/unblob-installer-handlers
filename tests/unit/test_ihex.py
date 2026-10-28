@@ -27,10 +27,6 @@ def mutate(line_no: int, column: int, new: bytes) -> bytes:
     return b"\n".join(lines)
 
 
-def test_tc_hex_02_valid_fixture_parses_to_its_eof():
-    assert ihex().chunk_end(FIXTURE, 0) == len(FIXTURE)
-
-
 @pytest.mark.parametrize(
     "line_no, column, new, what",
     [
@@ -41,6 +37,9 @@ def test_tc_hex_02_valid_fixture_parses_to_its_eof():
     ],
 )
 def test_tc_hex_02_corrupted_record_is_not_claimed(line_no, column, new, what):
+    # Control: the unmutated fixture parses to its EOF, so the decline below
+    # is caused by the mutation.
+    assert ihex().chunk_end(FIXTURE, 0) == len(FIXTURE)
     data = mutate(line_no, column, new)
     assert data != FIXTURE, what
     # Not claimed at all: no shorter chunk that stops before the bad record.
