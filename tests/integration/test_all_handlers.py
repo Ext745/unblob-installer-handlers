@@ -16,7 +16,6 @@ from unblob.testing import (
 from tests.conftest import INTEGRATION, run_unblob
 
 
-@pytest.mark.xfail(strict=True, reason="FSD Phase 4: no committed __output__ yet")
 @pytest.mark.parametrize(
     "input_dir,output_dir", list(gather_integration_tests(INTEGRATION))
 )

@@ -93,10 +93,6 @@ def test_tc_con_10_fixtures_over_1_mib_are_listed_exceptions():
     assert oversized == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="FSD Phase 4: fixtures not yet in unblob's __input__/__output__ layout",
-)
 def test_tc_con_09_fixtures_have_unblob_output_layout():
     inputs = list((ROOT / "tests" / "integration").rglob("__input__"))
     assert inputs
