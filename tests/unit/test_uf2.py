@@ -5,6 +5,11 @@ import struct
 from pathlib import Path
 from types import ModuleType
 
+import pytest
+from unblob.file_utils import File
+from unblob.models import ExtractError
+from unblob.report import ErrorReport, Report
+
 MAGIC_START0, MAGIC_START1, MAGIC_END = 0x0A324655, 0x9E5D5157, 0x0AB16F30
 FLAG_FAMILY = 0x00002000
 FLAG_NOT_MAIN = 0x00000001
@@ -88,3 +93,54 @@ def test_tc_uf2_07_not_main_flash_block_contributes_nothing(tmp_path: Path):
         "RP2040/0x00001000.bin": b"\xaa" * 256,
         "RP2040/0x00001200.bin": b"\xcc" * 256,
     }
+
+
+def test_tc_uf2_03_oversized_payload_ends_the_chunk_before_its_block():
+    good = [block(0x1000 + 256 * n, bytes([n]) * 256, n, 5) for n in range(5)]
+    # Block 3 declares 477 payload bytes, one more than its 476-byte data field.
+    bad = bytearray(good[3])
+    struct.pack_into("<I", bad, 16, 477)
+    data = b"".join([*good[:3], bytes(bad), good[4]])
+    with File.from_bytes(data) as file:
+        chunk = uf2().UF2Handler().calculate_chunk(file, 0)
+    assert chunk is not None
+    assert (chunk.start_offset, chunk.end_offset) == (0, 3 * 512)
+
+
+def extract_raising(
+    tmp_path: Path, *blocks: bytes
+) -> tuple[tuple[Report, ...], list[Path]]:
+    """Run the extractor expecting ExtractError; its reports and the files written."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    source = tmp_path / "in.uf2"
+    source.write_bytes(b"".join(blocks))
+    out = tmp_path / "out"
+    out.mkdir()
+    with pytest.raises(ExtractError) as raised:
+        uf2().UF2Extractor().extract(source, out)
+    return raised.value.reports, [p for p in out.rglob("*") if p.is_file()]
+
+
+def test_tc_uf2_08_conflicting_duplicate_fails_naming_both_blocks(tmp_path: Path):
+    reports, written = extract_raising(
+        tmp_path,
+        block(0x1000, b"\xaa" * 256, 0, 4),
+        block(0x1100, b"\xbb" * 256, 1, 4),
+        block(0x1200, b"\xcc" * 256, 2, 4),
+        block(0x1100, b"\xdd" * 256, 3, 4),  # rewrites block 1's bytes
+    )
+    errors = [r for r in reports if isinstance(r, ErrorReport)]
+    assert errors, reports
+    assert "blocks 1 and 3" in str(errors[0])
+    assert written == []  # the last write did not win, nothing was written
+
+
+def test_tc_uf2_11_identical_duplicates_extract_once(tmp_path: Path):
+    files = extract(
+        tmp_path,
+        block(0x1000, b"\xaa" * 256, 0, 4),
+        block(0x1100, b"\xbb" * 256, 1, 4),
+        block(0x1000, b"\xaa" * 256, 2, 4),  # same address, same bytes
+        block(0x1180, b"\xbb" * 64, 3, 4),  # inside block 1, same bytes
+    )
+    assert files == {"RP2040/0x00001000.bin": b"\xaa" * 256 + b"\xbb" * 256}

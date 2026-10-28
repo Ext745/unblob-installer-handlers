@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 
 from unblob.file_utils import InvalidInputFormat
 from unblob.models import (
+    ExtractError,
     Extractor,
     ExtractResult,
     File,
@@ -22,7 +23,7 @@ from unblob.models import (
     Reference,
     ValidChunk,
 )
-from unblob.report import ExtractionProblem
+from unblob.report import UnknownError
 
 from ._extract import require_whole_chunk
 from ._regions import OverlapConflictError, assemble, region_name
@@ -109,24 +110,22 @@ class UF2Extractor(Extractor):
             by_family.setdefault(block.family_id, []).append(
                 (block.target_addr, block.payload, block.block_no)
             )
-        problems = []
+        # Assemble every family before writing, so a conflict writes nothing.
+        families = []
         for family_id, writes in by_family.items():
             try:
-                regions = assemble(writes)
+                families.append((family_id, assemble(writes)))
             except OverlapConflictError as exc:
-                problems.append(
-                    ExtractionProblem(
-                        path=str(inpath),
-                        problem=f"UF2 blocks {exc.first} and {exc.second} write different bytes at 0x{exc.address:08x}",
-                        resolution="family not extracted",
-                    )
-                )
-                continue
+                problem = f"UF2 blocks {exc.first} and {exc.second} write different bytes at 0x{exc.address:08x}"
+                raise ExtractError(
+                    UnknownError(exception=ValueError(problem))
+                ) from None
+        for family_id, regions in families:
             for address, data in regions:
                 target = outdir / region_path(family_id, address)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(data)
-        return ExtractResult(reports=problems)
+        return ExtractResult(reports=[])
 
 
 class UF2Handler(Handler):

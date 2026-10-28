@@ -36,7 +36,8 @@ def assemble(writes: Iterable[tuple[int, bytes, int]]) -> list[tuple[int, bytes]
             start, buf, sources = regions[-1]
             end = start + len(buf)
             if address <= end:
-                overlap = buf[address - start : end]
+                # The write may end inside the region: compare what both cover.
+                overlap = buf[address - start : address - start + len(data)]
                 if bytes(overlap) != data[: len(overlap)]:
                     raise OverlapConflictError(
                         address, sources[address - start], source
