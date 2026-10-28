@@ -3,6 +3,8 @@
 import random
 from pathlib import Path
 
+import pytest
+
 from tests.conftest import FIXTURES, chunks, run_unblob
 
 FIXTURE = FIXTURES / "ihex" / "standard.hex"
@@ -57,3 +59,12 @@ def test_tc_hex_10_first_record_after_binary_keeps_its_base(
     regions = sorted((tmp_path / "x").rglob("0x*.bin"))
     assert [p.name for p in regions] == ["0x08000000.bin"]
     assert regions[0].read_bytes() == payload
+
+
+CORPUS = sorted((FIXTURES / "text-corpus").iterdir())
+
+
+@pytest.mark.parametrize("sample", CORPUS, ids=[p.name for p in CORPUS])
+def test_tc_hex_11_text_corpus_yields_no_ihex_chunk(sample: Path, tmp_path: Path):
+    found = chunks(run_unblob(sample, tmp_path, max_depth=1))
+    assert [c for c in found if c.handler_name == "ihex"] == []

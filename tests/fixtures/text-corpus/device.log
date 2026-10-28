@@ -1,0 +1,4 @@
+2026-10-27 12:00:00,001 INFO boot:10000000 bytes free
+2026-10-27 12:00:00,002 DEBUG reg:020000040800F2 written
+2026-10-27 12:00:01,003 WARN :00000001FF looks like an EOF record but is a log line
+12:00:02 ERROR crc:FFFF0000 mismatch at :10010000

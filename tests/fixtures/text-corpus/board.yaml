@@ -1,0 +1,8 @@
+board:
+  name: demo
+  flash: ":10000000"
+  ranges:
+    - :04000005
+    - :02000004
+  eof: ":00000001FF"
+  map: {start: 0x08000000, size: 0x10000}

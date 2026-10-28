@@ -24,6 +24,15 @@ give identical files, except `mcuboot/encrypted.bin` (see its row). The script c
 | `mcuboot/protected.bin` | `imgtool` 2.5.0, `--security-counter 7` | as `standard.bin`, plus a protected TLV area (SEC_CNT) at `0x1020` with magic `0x6908` | `imgtool dumpinfo` shows a protected TLV area |
 | `nsis/standard.exe` | `makensis` 3.10 (`standard.nsi`), build time pinned | installs the payload as `firmware.bin` | `7z e` extracts `firmware.bin` identical to the payload |
 
+## Text corpus (FR-HEX-02)
+
+`text-corpus/fields.rst`, `text-corpus/settings.py.txt` (Python dict
+literals; `.txt` keeps it out of the linters), `text-corpus/device.log` and
+`text-corpus/board.yaml`: written by hand for this repository (MIT), no build
+step. Non-HEX text whose lines
+start with or contain `:` followed by hex digits, including an EOF-like
+`:00000001FF`. Oracle: none needed; the expected result is no `ihex` chunk.
+
 ## Inno Setup
 
 Built by `tests/fixtures/build-inno.sh` from `standard.iss` (cut down from the
