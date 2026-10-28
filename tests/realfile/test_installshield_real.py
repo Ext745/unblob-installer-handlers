@@ -114,3 +114,40 @@ def test_tc_isc_04_multi_volume_set_extracted_once(realfiles: Path, tmp_path: Pa
     assert any(
         isinstance(r, ExtractCommandFailedReport) for r in multi.extraction_reports
     )
+
+
+REALTEK = Path("installshield/realtek-audio-maint-cache")
+
+
+def test_tc_isc_05_v6_set_extracted_from_hdr_and_cab(realfiles: Path, tmp_path: Path):
+    if shutil.which("unshield") is None:
+        pytest.skip("precondition unmet: unshield (extractors) not installed")
+    pair = [realfiles / REALTEK / "data1.hdr", realfiles / REALTEK / "data1.cab"]
+    expected = {
+        line.split(maxsplit=1)[1].removeprefix("./"): line.split()[0]
+        for line in (realfiles / REALTEK / "expected.md5").read_text().splitlines()
+        if line.strip()
+    }
+
+    result = run_unblob(
+        tar_of(tmp_path / "pair.tar", pair), tmp_path / "x", max_depth=2
+    )
+
+    (multi,) = [
+        r for t in result.results for r in t.reports if isinstance(r, MultiFileReport)
+    ]
+    assert multi.handler_name == "installshield_set"
+    assert multi.extraction_reports == []
+    (out,) = list((tmp_path / "x").rglob("data1_extract"))
+    found = {
+        str(p.relative_to(out)): hashlib.md5(p.read_bytes()).hexdigest()  # noqa: S324 - oracle is md5
+        for p in out.rglob("*")
+        if p.is_file()
+    }
+    assert found == expected  # every file once, nothing else
+
+
+@pytest.mark.parametrize("name", ["data1.cab", "data1.hdr"])
+def test_tc_isc_07_lone_v6_file_not_claimed(realfiles: Path, tmp_path: Path, name: str):
+    result = run_unblob(realfiles / REALTEK / name, tmp_path, max_depth=1)
+    assert isc_chunks(result) == []
