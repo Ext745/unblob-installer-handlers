@@ -1,0 +1,52 @@
+"""One valid sample per handler, for the common-behaviour tests (FSD §17).
+
+Committed fixtures where they exist; InstallShield and Setup Factory have
+none (tests/fixtures/SOURCES.md, "Not sourced"), so theirs come from the
+real-file store and those tests run at the real-file tier.
+"""
+
+from pathlib import Path
+
+from unblob.models import Handler
+
+import unblob_installers
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+COMMITTED = {
+    "uf2": FIXTURES / "uf2" / "standard.uf2",
+    "ihex": FIXTURES / "ihex" / "standard.hex",
+    "dfuse": FIXTURES / "dfuse" / "standard.dfu",
+    "mcuboot": FIXTURES / "mcuboot" / "standard.bin",
+    "inno": FIXTURES / "inno" / "standard-5.6.1-unicode.exe",
+    "wix_burn": FIXTURES / "burn" / "standard.exe",
+}
+REAL = {  # relative to the real-file store
+    "installshield": Path("installshield/baldurs-gate-patch-1.1.4315/data1.cab"),
+    "setup_factory": Path("setupfactory/setup-factory-10.4.0.0.exe"),
+}
+
+# Handlers whose extractor runs an external command (FSD §16.1).
+COMMANDS = {
+    "inno": "innoextract",
+    "installshield": "unshield",
+    "setup_factory": "sfextract",
+}
+
+
+def handler(name: str) -> Handler:
+    (cls,) = [h for h in unblob_installers.HANDLERS if name == h.NAME]
+    return cls()
+
+
+# The bytes each handler's PATTERNS match (Intel HEX: one record start).
+PATTERN_BYTES = {
+    "uf2": bytes.fromhex("5546320A57515D9E"),
+    "ihex": b":10000000",
+    "dfuse": b"DfuSe\x01",
+    "mcuboot": bytes.fromhex("3DB8F396"),
+    "installshield": b"ISc(",
+    "inno": b"MZ",
+    "setup_factory": b"MZ",
+    "wix_burn": b"MZ",
+}
