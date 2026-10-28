@@ -135,9 +135,6 @@ def test_tc_sec_04_script_over_64_mib_declined(pack, monkeypatch: pytest.MonkeyP
 
 
 MIB = 1024 * 1024
-UNBOUNDED = pytest.mark.xfail(
-    strict=True, reason="the header's dictionary size is not bounded"
-)
 
 
 def _lzma_declaring(dict_size: int) -> bytes:
@@ -150,9 +147,9 @@ def _lzma_declaring(dict_size: int) -> bytes:
     "dict_size, accepted",
     [
         (64 * MIB, True),
-        pytest.param(65 * MIB, False, marks=UNBOUNDED),
-        pytest.param(1 << 30, False, marks=UNBOUNDED),
-        pytest.param(0xFFFFFF00, False, marks=UNBOUNDED),
+        (65 * MIB, False),
+        (1 << 30, False),
+        (0xFFFFFF00, False),
     ],
     ids=["64MiB", "65MiB", "1GiB", "4GiB"],
 )

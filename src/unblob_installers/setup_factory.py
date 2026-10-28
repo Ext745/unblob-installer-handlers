@@ -45,6 +45,9 @@ LUA_DLL_HINT = 1000  # a file count above this is lua5.1.dll's size instead
 SCRIPT_NAME = b"irsetup.dat"
 SCRIPT_LIMIT = 64 * 1024 * 1024  # decompressed script; the sample's is 132 KiB
 SCRIPT_STEP = 1024 * 1024
+DECODER_LIMIT = (
+    SCRIPT_LIMIT + 1024 * 1024
+)  # a dictionary up to the script cap (NFR-SEC-05)
 VERSION_INFO = struct.pack("<I", 0xFEEF04BD)  # VS_FIXEDFILEINFO signature
 SUPPORTED_MAJORS = (7, 8, 9, 10)
 
@@ -103,7 +106,8 @@ def decompress(data: bytes) -> bytes | bytearray:
         if data[:2] == b"\x00\x06":
             return _blast.decompress(data, SCRIPT_LIMIT)
         if data[:2] == b"\x5d\x00":
-            d = lzma.LZMADecompressor(lzma.FORMAT_ALONE)
+            # The header chooses the dictionary: bound it before it is allocated.
+            d = lzma.LZMADecompressor(lzma.FORMAT_ALONE, memlimit=DECODER_LIMIT)
             return _lzma_capped(d, data)
         if data[:1] == b"\x18":
             # One LZMA2 dictionary-size byte, then the 8-byte unpacked size.
