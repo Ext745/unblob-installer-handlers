@@ -42,7 +42,7 @@ def test_tc_con_04_external_tools_are_the_pinned_versions():
     )
     pin = json.loads(direct_url)
     assert pin["url"] == "https://github.com/Ext745/sfextract"
-    assert pin["vcs_info"]["commit_id"] == "ca5c3a65485f6c6c3731f81207e613e17a8f29f4"
+    assert pin["vcs_info"]["commit_id"] == "33399fae02b0e462497bbcf75c51e24ccff15acc"
 
     listing = output(str(BIN / "unblob"), "--show-external-dependencies")
     for tool in ("unshield", "innoextract", "sfextract", "7z"):

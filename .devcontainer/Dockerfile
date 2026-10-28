@@ -36,10 +36,12 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # sfextract (FSD C-04) next to unblob, so the handlers find it on PATH: 0.0.8
-# plus Setup Factory 10 support, pinned by commit on this project's fork until
-# an upstream release contains it (FSD §16.1, C-11).
+# plus Setup Factory 10 support (branch setup-factory-10, upstream PR #12) and
+# the SF7 7.0.1/7.0.3, SF8 dependency-module and SF 9.2 layout fixes (branch
+# sf9-2-layout, on top of it), pinned by commit on this project's fork until
+# an upstream release contains them (FSD §16.1, C-11).
 # imgtool and intelhex are test oracles (FSD §16.1), never called by a handler.
-ARG SFEXTRACT_REV=ca5c3a65485f6c6c3731f81207e613e17a8f29f4
+ARG SFEXTRACT_REV=33399fae02b0e462497bbcf75c51e24ccff15acc
 RUN python3 -m venv /opt/tools-venv \
  && /opt/tools-venv/bin/pip install --no-cache-dir 'unblob==26.6.4' \
       "sfextract @ git+https://github.com/Ext745/sfextract@${SFEXTRACT_REV}" \

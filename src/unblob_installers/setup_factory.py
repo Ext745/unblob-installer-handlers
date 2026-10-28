@@ -112,7 +112,7 @@ class _Layout:
 def _layout(version: tuple[int, int]) -> _Layout:
     if version >= (10, 0):
         return _Layout(72, 12, "<q", 3)
-    if version >= (9, 3):
+    if version >= (9, 2):  # sfextract says 9.3; a 9.2.0.0 installer has it too
         return _Layout(72, 11, "<q", 8)
     if version >= (8, 0):
         return _Layout(72, 10, "<q", 8)
@@ -161,6 +161,39 @@ def entries_size(script: bytes, version: tuple[int, int]) -> int:
     c.skip(5)
     layout = _layout(version)
     return sum(_entry_size(c, layout) for _ in range(count))
+
+
+# MFC class headers: 0xFFFF, schema 1, name length, name.
+DEPENDENCY_CLASS = b"\xff\xff\x01\x00\x10\x00CSetupDependency"
+DEPENDENCY_FILE_CLASS = b"\xff\xff\x01\x00\x0f\x00CDependencyFile"
+
+
+def dependency_size(script: bytes) -> int:
+    """Return the stored size of the dependency modules' files, 0 if none.
+
+    A dependency module (the VB6 run-time, say) keeps its files ahead of the
+    archive files. Decoded from one Setup Factory 8.1 installer with one
+    module holding one stored file, whose two sizes are equal, so which of
+    them is the stored size is unproven; any other shape is declined.
+    """
+    at = script.find(DEPENDENCY_CLASS)
+    if at == -1:
+        return 0
+    if at < 2 or struct.unpack_from("<H", script, at - 2)[0] != 1:
+        raise InvalidInputFormat("several Setup Factory dependency modules")
+    at = script.find(DEPENDENCY_FILE_CLASS, at)
+    if at < 2:
+        raise InvalidInputFormat("Setup Factory dependency module without files")
+    c = _Cursor(script, at - 2, len(script))
+    if c.unpack("<H") != 1:
+        raise InvalidInputFormat("Setup Factory dependency module with several files")
+    c.skip(len(DEPENDENCY_FILE_CLASS) + 4)
+    c.string()  # source path
+    c.skip(8)  # the first size
+    size = c.unpack("<q")
+    if size < 0:
+        raise InvalidInputFormat("negative Setup Factory dependency file size")
+    return size
 
 
 def _file_count(c: _Cursor) -> int:
@@ -246,7 +279,7 @@ def data_end(file: File, start: int) -> int:
 
     count = _sf7_file_count(c) if version[0] == 7 else _file_count(c)
     script = _read_script(c, count, version)
-    end = c.pos + entries_size(script, version)
+    end = c.pos + dependency_size(script) + entries_size(script, version)
     if end > len(file):
         raise InvalidInputFormat("Setup Factory data runs past the end of the data")
     return end
@@ -293,6 +326,7 @@ class SetupFactoryHandler(Handler):
         ],
         limitations=[
             "Setup Factory 6 and older are not recognised",
+            "Installers with more than one dependency module, or a module with more than one file, are declined",
         ],
     )
 

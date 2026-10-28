@@ -118,10 +118,6 @@ def test_tc_sf_07_sf7_installer_equals_sfextract(realfiles: Path, tmp_path: Path
     check_matches_sfextract(realfiles, tmp_path, "sf7.0.6.1-FLVPlayerSetup.exe")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: sfextract assumes a byte between the SF7 signature and irsetup.exe, which 7.0.1 and 7.0.3 do not have",
-)
 @pytest.mark.parametrize("name", SF7[:2])
 def test_tc_sf_11_early_sf7_installers_equal_sfextract(
     realfiles: Path, tmp_path: Path, name: str
@@ -129,17 +125,9 @@ def test_tc_sf_11_early_sf7_installers_equal_sfextract(
     check_matches_sfextract(realfiles, tmp_path, name)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: SF 8.1.1004 chunk ends 1 MB early (4516216 of 5544584); sfextract fails on its LZMA data",
-)
 def test_tc_sf_08_sf8_1_installer_equals_sfextract(realfiles: Path, tmp_path: Path):
     check_matches_sfextract(realfiles, tmp_path, "sf8.1.1004.0-CSFireMonitor3Setup.exe")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: SF 9.2 declined (data runs past its end); sfextract fails reading its script",
-)
 def test_tc_sf_09_sf9_2_installer_equals_sfextract(realfiles: Path, tmp_path: Path):
     check_matches_sfextract(realfiles, tmp_path, "sf9.2.0.0-cleanmem_setup.exe")
