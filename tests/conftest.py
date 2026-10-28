@@ -23,6 +23,7 @@ INPUTS = {
     "text-corpus": INTEGRATION / "archive" / "ihex" / "text-corpus" / "__input__",
     "dfuse": INTEGRATION / "archive" / "dfuse" / "__input__",
     "mcuboot": INTEGRATION / "archive" / "mcuboot" / "__input__",
+    "installshield": INTEGRATION / "archive" / "installshield" / "__input__",
     "inno": INTEGRATION / "executable" / "inno" / "__input__",
     "burn": INTEGRATION / "executable" / "wix_burn" / "__input__",
     "nsis": INTEGRATION / "executable" / "nsis" / "__input__",

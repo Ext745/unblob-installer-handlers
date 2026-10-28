@@ -29,6 +29,7 @@ give identical files, except `archive/mcuboot/__input__/encrypted.bin` (see its 
 | `archive/mcuboot/__input__/standard.bin` | `imgtool` 2.5.0 | header 0x20, version `1.2.3+4`, unsigned (hash TLV only) | `imgtool verify` passes; image bytes equal the payload |
 | `archive/mcuboot/__input__/encrypted.bin` | `imgtool` 2.5.0, `-E` with a throwaway X25519 key | as `standard.bin`, image AES-128 encrypted (ENCX25519 TLV); **not reproducible**: the AES key is random per build, so the committed bytes are the fixture | `imgtool dumpinfo` reports `ENCRYPTED_AES128`; image bytes differ from the payload |
 | `archive/mcuboot/__input__/protected.bin` | `imgtool` 2.5.0, `--security-counter 7` | as `standard.bin`, plus a protected TLV area (SEC_CNT) at `0x1020` with magic `0x6908` | `imgtool dumpinfo` shows a protected TLV area |
+| `archive/installshield/__input__/standard.cab` | `installshield_cab.py` (this repository, MIT), layout as unshield 1.6.2 reads it | version 5 cabinet: file group `Firmware`, directory `app`, `firmware.bin` (the payload, compressed) and `readme.txt` (stored) | `unshield x` 1.6.2 extracts both; `firmware.bin` identical to the payload |
 | `executable/nsis/__input__/standard.exe` | `makensis` 3.10 (`standard.nsi`), build time pinned | installs the payload as `firmware.bin` | `7z e` extracts `firmware.bin` identical to the payload |
 
 ## Text corpus (FR-HEX-02)
@@ -96,10 +97,10 @@ size varies by a few bytes. The committed bytes are the fixture.
 
 ## Not sourced
 
-- **InstallShield.** No redistributable cabinet can be built without
-  InstallShield, which is commercial and Windows-only. The handler is
-  verified on real files only (`testing/test-plan.yaml` →
-  `installshield-fixture`).
+- **InstallShield, version 6 and later.** Only the version 5 cabinet is
+  written by hand (`installshield_cab.py`); building a v6+ set needs
+  InstallShield, which is commercial and Windows-only. Sets are verified on
+  real files only.
 - **Setup Factory.** No redistributable sample. The only one is a Setup
   Factory 10.4 trial build in the real-file store (`setup-factory-sample`),
   so the handler is verified on real files only.

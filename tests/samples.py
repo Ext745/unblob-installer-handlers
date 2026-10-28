@@ -1,8 +1,9 @@
 """One valid sample per handler, for the common-behaviour tests (FSD §17).
 
-Committed fixtures where they exist; InstallShield and Setup Factory have
-none (tests/fixtures/SOURCES.md, "Not sourced"), so theirs come from the
-real-file store and those tests run at the real-file tier.
+Committed fixtures where they exist; Setup Factory has none
+(tests/fixtures/SOURCES.md, "Not sourced"), so its sample comes from the
+real-file store and those tests run at the real-file tier. InstallShield has
+both: the hand-built version 5 cabinet, and a real one in REAL.
 """
 
 from pathlib import Path
@@ -17,6 +18,7 @@ COMMITTED = {
     "ihex": INPUTS["ihex"] / "standard.hex",
     "dfuse": INPUTS["dfuse"] / "standard.dfu",
     "mcuboot": INPUTS["mcuboot"] / "standard.bin",
+    "installshield": INPUTS["installshield"] / "standard.cab",
     "inno": INPUTS["inno"] / "standard-5.6.1-unicode.exe",
     "wix_burn": INPUTS["burn"] / "standard.exe",
 }

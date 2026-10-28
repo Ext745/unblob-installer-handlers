@@ -6,7 +6,7 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 docker run --rm --network none -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$HERE/..":/t unblob-installer-handlers-dev bash -euc '
 cd /t/integration
-mkdir -p archive/{uf2,ihex,dfuse,mcuboot}/__input__ executable/nsis/__input__
+mkdir -p archive/{uf2,ihex,dfuse,mcuboot,installshield}/__input__ executable/nsis/__input__
 python3 ../fixtures/payload.py > /tmp/firmware.bin
 
 # UF2: RP2040 family at 0x10000000
@@ -40,10 +40,16 @@ python3 -c "import sys; d=open(sys.argv[1],\"rb\").read(); sys.exit(1 if d[0x20:
 imgtool sign --header-size 0x20 --pad-header --align 4 --version 1.2.3+4 --slot-size 0x10000 --security-counter 7 /tmp/firmware.bin archive/mcuboot/__input__/protected.bin >/dev/null
 imgtool dumpinfo archive/mcuboot/__input__/protected.bin | grep -q "Protected TLV area" && echo "mcuboot: protected TLV area present"
 
+# InstallShield: a version 5 cabinet written by installshield_cab.py (layout as
+# unshield 1.6.2 reads it), checked by unshield itself
+python3 ../fixtures/installshield_cab.py /tmp/firmware.bin archive/installshield/__input__/standard.cab
+cp archive/installshield/__input__/standard.cab /tmp/data1.cab
+unshield -d /tmp/isout x /tmp/data1.cab >/dev/null && cmp /tmp/firmware.bin /tmp/isout/Firmware/app/firmware.bin && echo "installshield: unshield extracts firmware.bin identical"
+
 # NSIS: makensis 3.10; build time and file mtime pinned so the output is reproducible
 mkdir -p /tmp/nsisbuild && cp ../fixtures/standard.nsi /tmp/nsisbuild/ && cp /tmp/firmware.bin /tmp/nsisbuild/firmware.bin
 touch -d @1700000000 /tmp/nsisbuild/firmware.bin
 (cd /tmp/nsisbuild && SOURCE_DATE_EPOCH=1700000000 makensis -V2 standard.nsi >/dev/null) && cp /tmp/nsisbuild/standard.exe executable/nsis/__input__/standard.exe
 7z e -y -bd -o/tmp/nsisout executable/nsis/__input__/standard.exe firmware.bin >/dev/null && cmp /tmp/firmware.bin /tmp/nsisout/firmware.bin && echo "nsis: payload extracted identical"
 '
-cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin} executable/nsis/__input__/standard.exe
+cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab} executable/nsis/__input__/standard.exe
