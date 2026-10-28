@@ -36,10 +36,14 @@ imgtool sign --header-size 0x20 --pad-header --align 4 --version 1.2.3+4 --slot-
 imgtool dumpinfo mcuboot/encrypted.bin | grep -q "flags: *ENCRYPTED_AES128" && echo "mcuboot: encrypted image flagged ENCRYPTED_AES128"
 python3 -c "import sys; d=open(sys.argv[1],\"rb\").read(); sys.exit(1 if d[0x20:0x20+4096]==open(\"/tmp/firmware.bin\",\"rb\").read() else 0)" mcuboot/encrypted.bin && echo "mcuboot: encrypted image bytes differ from the payload"
 
+# MCUboot with a protected TLV area (FR-MCB-03): the security counter goes there
+imgtool sign --header-size 0x20 --pad-header --align 4 --version 1.2.3+4 --slot-size 0x10000 --security-counter 7 /tmp/firmware.bin mcuboot/protected.bin >/dev/null
+imgtool dumpinfo mcuboot/protected.bin | grep -q "Protected TLV area" && echo "mcuboot: protected TLV area present"
+
 # NSIS: makensis 3.10; build time and file mtime pinned so the output is reproducible
 mkdir -p /tmp/nsisbuild && cp standard.nsi /tmp/nsisbuild/ && cp /tmp/firmware.bin /tmp/nsisbuild/firmware.bin
 touch -d @1700000000 /tmp/nsisbuild/firmware.bin
 (cd /tmp/nsisbuild && SOURCE_DATE_EPOCH=1700000000 makensis -V2 standard.nsi >/dev/null) && cp /tmp/nsisbuild/standard.exe nsis/standard.exe
 7z e -y -bd -o/tmp/nsisout nsis/standard.exe firmware.bin >/dev/null && cmp /tmp/firmware.bin /tmp/nsisout/firmware.bin && echo "nsis: payload extracted identical"
 '
-cd "$HERE" && sha256sum */standard.* mcuboot/encrypted.bin && ls -l */standard.* mcuboot/encrypted.bin | awk '{print $5, $9}'
+cd "$HERE" && sha256sum */standard.* mcuboot/encrypted.bin mcuboot/protected.bin && ls -l */standard.* mcuboot/encrypted.bin mcuboot/protected.bin | awk '{print $5, $9}'

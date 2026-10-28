@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import FIXTURES, chunks, run_unblob, tree
+from tests.samples import PLAIN_PE
 
 FIXTURES_INNO = sorted((FIXTURES / "inno").glob("standard-*.exe"))
 IDS = [p.stem.removeprefix("standard-") for p in FIXTURES_INNO]
@@ -51,3 +52,15 @@ def test_tc_pe_02_appended_bytes_not_absorbed(tmp_path: Path):
     assert [(c.handler_name, c.start_offset, c.end_offset) for c in found] == [
         ("inno", 0, len(installer))
     ]
+
+
+@pytest.mark.parametrize(
+    "sample", [PLAIN_PE, FIXTURES / "nsis" / "standard.exe"], ids=["plain-pe", "nsis"]
+)
+def test_tc_inno_02_pe_without_inno_setup_data_not_claimed(
+    sample: Path, tmp_path: Path
+):
+    if not sample.is_file():
+        pytest.skip(f"precondition unmet: {sample} not installed")
+    found = chunks(run_unblob(sample, tmp_path, max_depth=1))
+    assert "inno" not in [c.handler_name for c in found]

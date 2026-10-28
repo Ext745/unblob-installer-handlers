@@ -21,6 +21,7 @@ give identical files, except `mcuboot/encrypted.bin` (see its row). The script c
 | `dfuse/standard.dfu` | `dfuse-pack.py` (dfu-util 0.11) | one target, one element at `0x08000000`, VID/PID `0483:df11` | `dfu-suffix -c` accepts suffix and CRC |
 | `mcuboot/standard.bin` | `imgtool` 2.5.0 | header 0x20, version `1.2.3+4`, unsigned (hash TLV only) | `imgtool verify` passes; image bytes equal the payload |
 | `mcuboot/encrypted.bin` | `imgtool` 2.5.0, `-E` with a throwaway X25519 key | as `standard.bin`, image AES-128 encrypted (ENCX25519 TLV); **not reproducible**: the AES key is random per build, so the committed bytes are the fixture | `imgtool dumpinfo` reports `ENCRYPTED_AES128`; image bytes differ from the payload |
+| `mcuboot/protected.bin` | `imgtool` 2.5.0, `--security-counter 7` | as `standard.bin`, plus a protected TLV area (SEC_CNT) at `0x1020` with magic `0x6908` | `imgtool dumpinfo` shows a protected TLV area |
 | `nsis/standard.exe` | `makensis` 3.10 (`standard.nsi`), build time pinned | installs the payload as `firmware.bin` | `7z e` extracts `firmware.bin` identical to the payload |
 
 ## Inno Setup

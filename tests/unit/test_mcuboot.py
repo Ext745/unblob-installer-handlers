@@ -1,8 +1,11 @@
-"""MCUboot pure core (FSD §13): signed and encrypted, from TLVs and flags."""
+"""MCUboot pure core (FSD §13): TLV areas, signed and encrypted."""
 
 import importlib
 import struct
 from types import ModuleType
+
+import pytest
+from unblob.file_utils import InvalidInputFormat
 
 from tests.conftest import FIXTURES
 
@@ -41,3 +44,20 @@ def test_tc_mcb_07_encrypted_follows_the_flag_bits():
     assert info(with_flags(FIXTURE, 0x4)).encrypted is True  # AES128
     assert info(with_flags(FIXTURE, 0x8)).encrypted is True  # AES256
     assert info(with_flags(FIXTURE, 0x1 | 0x20)).encrypted is False  # PIC, RAM_LOAD
+
+
+PROTECTED = (FIXTURES / "mcuboot" / "protected.bin").read_bytes()
+
+
+def test_tc_mcb_03_protected_tlvs_without_their_magic_are_not_claimed():
+    hdr_size, prot_size, img_size = struct.unpack_from("<HHI", PROTECTED, 8)
+    assert prot_size  # the fixture has a protected TLV area
+    info = mcuboot().image_info(PROTECTED)
+    assert info.end == len(PROTECTED)
+    assert 0x50 in info.tlv_types  # SEC_CNT, from the protected area
+
+    at = hdr_size + img_size  # where 0x6908 must be
+    assert PROTECTED[at : at + 2] == struct.pack("<H", 0x6908)
+    corrupted = PROTECTED[:at] + struct.pack("<H", 0x6907) + PROTECTED[at + 2 :]
+    with pytest.raises(InvalidInputFormat):
+        mcuboot().image_info(corrupted)

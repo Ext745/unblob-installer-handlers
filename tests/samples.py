@@ -26,6 +26,10 @@ REAL = {  # relative to the real-file store
     "setup_factory": Path("setupfactory/setup-factory-10.4.0.0.exe"),
 }
 
+# A plain PE: NSIS's exehead stub with no installer data appended
+# (nsis=3.10-2ubuntu2, pinned in .devcontainer/Dockerfile).
+PLAIN_PE = Path("/usr/share/nsis/Stubs/zlib-x86-unicode")
+
 # Handlers whose extractor runs an external command (FSD §16.1).
 COMMANDS = {
     "inno": "innoextract",
