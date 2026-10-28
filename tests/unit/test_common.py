@@ -32,10 +32,6 @@ def test_tc_com_02_only_invalid_input_format_escapes(name: str):
     check_chunk_calculation_contained(name, COMMITTED[name])
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: extractors without a tool do not check their input is one whole chunk",
-)
 @pytest.mark.parametrize("name", PURE)
 def test_tc_com_03_truncated_body_fails_extraction(name: str, tmp_path: Path):
     data = COMMITTED[name].read_bytes()

@@ -22,6 +22,7 @@ from unblob.models import (
     ValidChunk,
 )
 
+from ._extract import require_whole_chunk
 from ._regions import region_name, safe_name
 
 PREFIX = struct.Struct("<5sBIB")  # signature, version, image size, targets
@@ -96,6 +97,7 @@ def parse(buf, start: int) -> tuple[int, list[Element]]:
 
 class DfuSeExtractor(Extractor):
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        require_whole_chunk(DfuSeHandler().calculate_chunk, inpath)
         data = inpath.read_bytes()
         _end, elements = parse(data, 0)
         for element in elements:

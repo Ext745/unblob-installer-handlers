@@ -45,10 +45,6 @@ def test_tc_com_02_real_only_invalid_input_format_escapes(name: str, realfiles: 
     check_chunk_calculation_contained(name, realfiles / REAL[name])
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: a missing tool raises FileNotFoundError, reported as UnknownError",
-)
 @pytest.mark.parametrize("name", REAL)
 def test_tc_com_04_real_missing_tool_reported(
     name: str, realfiles: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -71,10 +67,6 @@ def test_tc_com_05_real_set_output_only_beneath_extraction_dir(
     check_output_contained(avigo_tar(realfiles, tmp_path), tmp_path, monkeypatch)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: a missing tool raises FileNotFoundError, reported as UnknownError",
-)
 def test_tc_com_04_real_set_missing_tool_reported(
     realfiles: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

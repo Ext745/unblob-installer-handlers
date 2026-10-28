@@ -24,6 +24,7 @@ from unblob.models import (
     ValidChunk,
 )
 
+from ._extract import require_whole_chunk
 from ._pe import certificate_end, certificate_table, find_section
 
 SECTION_NAME = b".wixburn"
@@ -78,6 +79,7 @@ def _bundle_containers(file: File, start: int) -> list[tuple[str, int, int]]:
 
 class WixBurnExtractor(Extractor):
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        require_whole_chunk(WixBurnHandler().calculate_chunk, inpath)
         fs = FileSystem(outdir)
         with File.from_path(inpath) as file:
             for name, offset, size in _bundle_containers(file, 0):

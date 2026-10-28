@@ -11,7 +11,6 @@ patch. Extraction runs sfextract.
 
 import lzma
 import struct
-import subprocess
 import zlib
 from pathlib import Path
 
@@ -31,6 +30,7 @@ from unblob.models import (
 from unblob.report import ExtractCommandFailedReport
 
 from . import _blast
+from ._extract import run_tool
 from ._pe import certificate_end, overlay_start
 
 SIGNATURE = bytes.fromhex("e0e0e1e1e2e2e3e3e4e4e5e5e6e6e7e7")
@@ -201,7 +201,7 @@ class SetupFactoryExtractor(Extractor):
 
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
         command = ["sfextract", "-o", str(outdir), str(inpath)]
-        result = subprocess.run(command, capture_output=True, check=False)
+        result = run_tool(command)
         # sfextract exits 0 when it finds no extractor (FR-SF-03).
         if result.returncode != 0 or not result.stdout.startswith(b"Extracted "):
             raise ExtractError(

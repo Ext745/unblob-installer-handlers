@@ -56,10 +56,6 @@ def check_output_contained(
             assert path.resolve().is_relative_to(extract_root.resolve()), path
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: a missing tool raises FileNotFoundError, reported as UnknownError",
-)
 def test_tc_com_04_missing_innoextract_reported(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

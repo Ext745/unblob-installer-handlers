@@ -23,6 +23,7 @@ from unblob.models import (
 )
 from unblob.report import ExtractionProblem
 
+from ._extract import require_whole_chunk
 from ._regions import OverlapConflictError, assemble, region_name
 
 DATA, EOF, EXT_SEGMENT, START_SEGMENT, EXT_LINEAR, START_LINEAR = range(6)
@@ -116,6 +117,7 @@ def data_writes(text: bytes) -> list[tuple[int, bytes, int]]:
 
 class IntelHexExtractor(Extractor):
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        require_whole_chunk(IntelHexHandler().calculate_chunk, inpath)
         writes = data_writes(inpath.read_bytes())
         try:
             regions = assemble(writes)

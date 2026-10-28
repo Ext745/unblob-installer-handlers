@@ -10,7 +10,6 @@ and given to unshield whole, whatever its version (FR-ISC-04).
 
 import shutil
 import struct
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -32,6 +31,8 @@ from unblob.models import (
     ValidChunk,
 )
 from unblob.report import ExtractCommandFailedReport
+
+from ._extract import run_tool
 
 COMMON = struct.Struct(
     "<4sIIII"
@@ -116,7 +117,7 @@ def run_unshield(target: Path, outdir: Path) -> None:
     for options in ([], ["-O"]):
         with tempfile.TemporaryDirectory() as tmp:
             command = ["unshield", *options, "-d", tmp, "x", str(target)]
-            result = subprocess.run(command, capture_output=True, check=False)
+            result = run_tool(command)
             if result.returncode == 0:
                 for item in Path(tmp).iterdir():
                     shutil.move(item, outdir / item.name)

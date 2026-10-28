@@ -7,7 +7,6 @@ before signing. Extraction runs innoextract.
 
 import shutil
 import struct
-import subprocess
 import tempfile
 import zlib
 from pathlib import Path
@@ -27,6 +26,7 @@ from unblob.models import (
 )
 from unblob.report import ExtractCommandFailedReport
 
+from ._extract import run_tool
 from ._pe import certificate_end
 
 # Offset-table IDs and the earliest Inno version using each.
@@ -86,7 +86,7 @@ class InnoExtractor(Extractor):
             setup = Path(tmp) / "setup.exe"
             shutil.copyfile(inpath, setup)
             command = ["innoextract", "-e", "-s", "-d", str(outdir), str(setup)]
-            result = subprocess.run(command, capture_output=True, check=False)
+            result = run_tool(command)
         if result.returncode != 0:
             raise ExtractError(
                 ExtractCommandFailedReport(

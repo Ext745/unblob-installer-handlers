@@ -24,6 +24,7 @@ from unblob.models import (
 )
 from unblob.report import ExtractionProblem
 
+from ._extract import require_whole_chunk
 from ._regions import OverlapConflictError, assemble, region_name
 
 BLOCK_SIZE = 512
@@ -100,6 +101,7 @@ def blocks(data: bytes) -> list[Block]:
 
 class UF2Extractor(Extractor):
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        require_whole_chunk(UF2Handler().calculate_chunk, inpath)
         by_family: dict[int | None, list[tuple[int, bytes, int]]] = {}
         for block in blocks(inpath.read_bytes()):
             if block.flags & FLAG_NOT_MAIN_FLASH:

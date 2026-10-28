@@ -22,6 +22,8 @@ from unblob.models import (
 )
 from unblob.report import Report
 
+from ._extract import require_whole_chunk
+
 IMAGE_MAGIC = 0x96F3B83D
 HEADER = struct.Struct(
     "<IIHHIIBBHII"
@@ -130,6 +132,7 @@ def image_info(buf, start: int = 0) -> ImageInfo:
 
 class MCUbootExtractor(Extractor):
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        require_whole_chunk(MCUbootHandler().calculate_chunk, inpath)
         data = inpath.read_bytes()
         info = image_info(data)
         image_end = info.header_size + info.image_size
