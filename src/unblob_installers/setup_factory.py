@@ -78,6 +78,13 @@ def runtime_version(buf, start: int, end: int) -> tuple[int, int]:
     return version_ms >> 16, version_ms & 0xFFFF
 
 
+def _capped(script: bytes) -> bytes:
+    """Decline a script past SCRIPT_LIMIT rather than parse a cut one (NFR-SEC-04)."""
+    if len(script) > SCRIPT_LIMIT:
+        raise InvalidInputFormat("Setup Factory script is over the 64 MiB limit")
+    return script
+
+
 def decompress(data: bytes) -> bytes:
     """Decompress a table file, detecting the method as sfextract does."""
     try:
@@ -85,13 +92,13 @@ def decompress(data: bytes) -> bytes:
             return _blast.decompress(data, SCRIPT_LIMIT)
         if data[:2] == b"\x5d\x00":
             d = lzma.LZMADecompressor(lzma.FORMAT_ALONE)
-            return d.decompress(data, max_length=SCRIPT_LIMIT)
+            return _capped(d.decompress(data, max_length=SCRIPT_LIMIT + 1))
         if data[:1] == b"\x18":
             # One LZMA2 dictionary-size byte, then the 8-byte unpacked size.
             dict_size = (2 | data[0] & 1) << (data[0] // 2 + 11)
             lzma2 = {"id": lzma.FILTER_LZMA2, "dict_size": dict_size}
             d = lzma.LZMADecompressor(lzma.FORMAT_RAW, filters=[lzma2])
-            return d.decompress(data[9:], max_length=SCRIPT_LIMIT)
+            return _capped(d.decompress(data[9:], max_length=SCRIPT_LIMIT + 1))
     except (lzma.LZMAError, ValueError) as e:
         raise InvalidInputFormat(
             f"Setup Factory script does not decompress: {e}"

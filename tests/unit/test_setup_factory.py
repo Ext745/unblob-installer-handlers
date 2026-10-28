@@ -87,7 +87,6 @@ def _lzma2(size: int) -> bytes:
     return bytes([LZMA2_DICT]) + struct.pack("<q", size) + raw
 
 
-@pytest.mark.xfail(strict=True, reason="LZMA scripts are cut at the cap, not declined")
 @pytest.mark.parametrize("pack", [_lzma_alone, _lzma2], ids=["lzma", "lzma2"])
 def test_tc_sec_04_script_over_64_mib_declined(pack, monkeypatch: pytest.MonkeyPatch):
     assert len(setup_factory.decompress(pack(LIMIT))) == LIMIT
