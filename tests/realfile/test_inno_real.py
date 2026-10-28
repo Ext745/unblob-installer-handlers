@@ -1,5 +1,6 @@
 """Inno Setup against real signed vendor installers (FSD FR-INNO-04, FR-PE-01)."""
 
+import random
 import shutil
 import subprocess
 from pathlib import Path
@@ -62,3 +63,28 @@ def test_tc_inno_04_real_installers(realfiles: Path, tmp_path: Path):
     )
     found = sorted(str(p.relative_to(out)) for p in out.rglob("*") if p.is_file())
     assert found == expected
+
+
+def test_tc_pe_04_signed_installer_with_appended_bytes(realfiles: Path, tmp_path: Path):
+    # FR-PE-01's padded variant: the chunk ends at the certificate table's end,
+    # not at the end of the file, so the appended bytes stay unknown.
+    installer = (realfiles / NAVX).read_bytes()
+    rng = random.Random(1704)  # noqa: S311 - fixed test data, not cryptography
+    source = tmp_path / "padded.exe"
+    source.write_bytes(installer + rng.randbytes(4096))
+
+    reports = top_level(run_unblob(source, tmp_path / "x", max_depth=1), source)
+
+    # unblob lists unknown chunks first; compare in file order.
+    assert sorted(
+        (
+            r.start_offset,
+            r.end_offset,
+            type(r).__name__,
+            getattr(r, "handler_name", None),
+        )
+        for r in reports
+    ) == [
+        (0, len(installer), "ChunkReport", "inno"),
+        (len(installer), len(installer) + 4096, "UnknownChunkReport", None),
+    ]

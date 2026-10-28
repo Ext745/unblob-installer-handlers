@@ -144,3 +144,37 @@ def test_tc_uf2_11_identical_duplicates_extract_once(tmp_path: Path):
         block(0x1180, b"\xbb" * 64, 3, 4),  # inside block 1, same bytes
     )
     assert files == {"RP2040/0x00001000.bin": b"\xaa" * 256 + b"\xbb" * 256}
+
+
+@pytest.mark.parametrize("field", [0, 4, 508], ids=["start0", "start1", "end"])
+def test_tc_uf2_12_block_with_one_bad_magic_not_accepted(field: int):
+    good = block(0x10000000, b"\xaa" * 256)
+    assert uf2().parse_block(good) is not None
+    bad = bytearray(good)
+    bad[field] ^= 0xFF
+    assert uf2().parse_block(bytes(bad)) is None
+    # In a run, the chunk ends before the block with the bad magic.
+    run = b"".join(block(0x1000 + 256 * n, bytes([n]) * 256, n, 3) for n in range(2))
+    with File.from_bytes(run + bytes(bad)) as file:
+        chunk = uf2().UF2Handler().calculate_chunk(file, 0)
+    assert chunk is not None
+    assert (chunk.start_offset, chunk.end_offset) == (0, 2 * 512)
+
+
+ESP32S3 = 0xC47E5767
+
+
+def test_tc_uf2_13_families_never_share_a_file(tmp_path: Path):
+    # Two families writing different bytes at the same addresses: each keeps
+    # its own region file, and neither is a conflict.
+    files = extract(
+        tmp_path,
+        block(0x1000, b"\xaa" * 256, 0, 4),
+        block(0x1000, b"\x55" * 256, 1, 4, family=ESP32S3),
+        block(0x1100, b"\xbb" * 256, 2, 4),
+        block(0x1100, b"\x66" * 256, 3, 4, family=ESP32S3),
+    )
+    assert files == {
+        "RP2040/0x00001000.bin": b"\xaa" * 256 + b"\xbb" * 256,
+        "ESP32S3/0x00001000.bin": b"\x55" * 256 + b"\x66" * 256,
+    }

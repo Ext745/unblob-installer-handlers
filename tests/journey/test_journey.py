@@ -20,11 +20,30 @@ PICO = Path("boards/rp2040-pico-sdk")
 NAVX = Path("inno/navx-mxp-setup.exe")
 
 
+# FSD §5: every handler this package ships, by name, not read from the package.
+HANDLER_NAMES = {
+    "uf2",
+    "ihex",
+    "dfuse",
+    "mcuboot",
+    "installshield",
+    "inno",
+    "setup_factory",
+    "wix_burn",
+}
+DIR_HANDLER_NAMES = {"installshield_set"}
+
+
 def test_jrn_01_1_plugin_registers_its_handlers():
     pm = UnblobPluginManager()
     pm.load_setuptools_entrypoints()
     names = {h.NAME for group in pm.hook.unblob_register_handlers() for h in group}
-    assert "uf2" in names
+    dir_names = {
+        h.NAME for group in pm.hook.unblob_register_dir_handlers() for h in group
+    }
+    # Every handler, not just one: none of them may need -P (FR-PKG-01).
+    assert names >= HANDLER_NAMES, HANDLER_NAMES - names
+    assert dir_names >= DIR_HANDLER_NAMES, DIR_HANDLER_NAMES - dir_names
 
 
 def test_jrn_01_2_board_uf2_is_one_uf2_chunk(realfiles: Path, tmp_path: Path):

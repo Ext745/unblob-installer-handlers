@@ -8,6 +8,11 @@ from pathlib import Path
 
 import pytest
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # Python 3.10 (C-02): pytest's own dependency
+    import tomli as tomllib
+
 ROOT = Path(__file__).parents[2]
 BIN = Path(sys.executable).parent  # the environment under test
 INTEGRATION = ROOT / "tests" / "integration"
@@ -37,7 +42,43 @@ def test_tc_con_03_entry_point_registered():
     assert entry.value == "unblob_installers"
 
 
+def flat(table: dict, prefix: str = "") -> dict:
+    out = {}
+    for key, value in table.items():
+        if isinstance(value, dict):
+            out |= flat(value, f"{prefix}{key}.")
+        else:
+            out[f"{prefix}{key}"] = value
+    return out
+
+
+# The only places this repository's ruff/pyright settings may differ from
+# unblob 26.6.4's, and why none of them weakens a check on src/:
+ALLOWED_DIFFERENCES = {
+    # paths that hold no package source
+    "ruff.extend-exclude": [".claude"],
+    "pyright.exclude": [".venv", "build", ".claude", ".devcontainer"],
+    # first-party is this package, not unblob
+    "ruff.lint.isort.known-first-party": ["unblob_installers"],
+    # dropped: it exempted __init__.py from unused-import checks (stricter without)
+    "ruff.lint.ignore-init-module-imports": None,
+}
+
+
 def test_tc_con_05_ruff_and_pyright_clean_on_src():
+    upstream = tomllib.loads(
+        (ROOT / "tests" / "data" / "unblob-26.6.4-lint.toml").read_text()
+    )
+    ours = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    theirs = flat({k: upstream["tool"][k] for k in ("ruff", "pyright")})
+    mine = flat({k: ours["tool"][k] for k in ("ruff", "pyright")})
+    differences = {
+        key: mine.get(key)
+        for key in theirs.keys() | mine.keys()
+        if theirs.get(key) != mine.get(key)
+    }
+    assert differences == ALLOWED_DIFFERENCES  # no local override weakens them
+
     src = str(ROOT / "src")
     subprocess.run([BIN / "ruff", "check", src], check=True, cwd=ROOT)
     subprocess.run(

@@ -27,6 +27,21 @@ main()
 """
 
 
+# FSD §5: the handlers this package ships, by their documented names; not
+# read from the package, so a handler it stops registering is missed here.
+DOC_NAMES = [
+    "UF2",
+    "Intel HEX",
+    "DfuSe",
+    "MCUboot image",
+    "InstallShield cabinet",
+    "Inno Setup",
+    "Setup Factory",
+    "WiX Burn bundle",
+    "InstallShield multi-volume set",
+]
+
+
 def test_tc_pkg_02_loads_with_plugins_path(tmp_path: Path):
     out = subprocess.run(
         [
@@ -47,6 +62,28 @@ def test_tc_pkg_02_loads_with_plugins_path(tmp_path: Path):
     )
     assert out.returncode == 0, out.stderr[-2000:]
     assert '"handler_name": "uf2"' in (tmp_path / "r.json").read_text()
+
+    # Every handler, not just the one that ran: each DOC appears in the
+    # handler list unblob builds with -P and without the installed package.
+    doc = tmp_path / "handlers.md"
+    listing = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            NOT_INSTALLED,
+            "-P",
+            str(PACKAGE_DIR.parent),
+            "--build-handlers-doc",
+            str(doc),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert listing.returncode == 0, listing.stderr[-2000:]
+    sections = doc.read_text()
+    missing = [name for name in DOC_NAMES if f"\n## {name}\n" not in sections]
+    assert missing == []
 
 
 def test_tc_pkg_05_dependency_listing_covers_our_commands():
