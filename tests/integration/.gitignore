@@ -1,0 +1,2 @@
+# Expected extraction trees (FSD C-09) are committed; the root ignores *_extract/.
+!*_extract/
