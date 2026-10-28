@@ -88,7 +88,10 @@ def _lzma2(size: int) -> bytes:
     return bytes([LZMA2_DICT]) + struct.pack("<q", size) + raw
 
 
-SLACK = 16 * 1024 * 1024  # one decompression step and the buffer's growth
+# Held beside the script: a bytearray's spare capacity (up to an eighth), the
+# decompressor's dictionary (liblzma allocates through Python, 16 MiB for these
+# scripts at most) and one 1 MiB decompression step.
+SLACK = LIMIT // 8 + 16 * 1024 * 1024 + 2 * 1024 * 1024
 
 
 def held(call):
@@ -105,9 +108,6 @@ def held(call):
     return result, peak
 
 
-@pytest.mark.xfail(
-    strict=True, reason="lzma joins its output blocks: about twice the cap held"
-)
 @pytest.mark.parametrize("pack", [_lzma_alone, _lzma2], ids=["lzma", "lzma2"])
 def test_tc_sec_04_script_over_64_mib_declined(pack, monkeypatch: pytest.MonkeyPatch):
     # Exactly the cap decompresses whole, holding no more than the cap.

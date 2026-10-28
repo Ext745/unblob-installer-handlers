@@ -44,6 +44,7 @@ XORED_MZ = bytes(b ^ 0x07 for b in b"MZ")  # SF7 XORs irsetup.exe's start with 0
 LUA_DLL_HINT = 1000  # a file count above this is lua5.1.dll's size instead
 SCRIPT_NAME = b"irsetup.dat"
 SCRIPT_LIMIT = 64 * 1024 * 1024  # decompressed script; the sample's is 132 KiB
+SCRIPT_STEP = 1024 * 1024
 VERSION_INFO = struct.pack("<I", 0xFEEF04BD)  # VS_FIXEDFILEINFO signature
 SUPPORTED_MAJORS = (7, 8, 9, 10)
 
@@ -78,27 +79,38 @@ def runtime_version(buf, start: int, end: int) -> tuple[int, int]:
     return version_ms >> 16, version_ms & 0xFFFF
 
 
-def _capped(script: bytes) -> bytes:
-    """Decline a script past SCRIPT_LIMIT rather than parse a cut one (NFR-SEC-04)."""
-    if len(script) > SCRIPT_LIMIT:
-        raise InvalidInputFormat("Setup Factory script is over the 64 MiB limit")
-    return script
+def _lzma_capped(d: lzma.LZMADecompressor, data: bytes) -> bytearray:
+    """Decompress in steps, declining once the script passes SCRIPT_LIMIT (NFR-SEC-04).
+
+    One call with max_length would hold the output twice while lzma joins its
+    blocks; steps into one buffer hold the script once.
+    """
+    script = bytearray()
+    step = d.decompress(data, max_length=SCRIPT_STEP)
+    while True:
+        # Checked before appending, so the buffer never grows past the limit.
+        if len(script) + len(step) > SCRIPT_LIMIT:
+            raise InvalidInputFormat("Setup Factory script is over the 64 MiB limit")
+        script += step
+        if d.eof or d.needs_input:
+            return script
+        step = d.decompress(b"", max_length=SCRIPT_STEP)
 
 
-def decompress(data: bytes) -> bytes:
+def decompress(data: bytes) -> bytes | bytearray:
     """Decompress a table file, detecting the method as sfextract does."""
     try:
         if data[:2] == b"\x00\x06":
             return _blast.decompress(data, SCRIPT_LIMIT)
         if data[:2] == b"\x5d\x00":
             d = lzma.LZMADecompressor(lzma.FORMAT_ALONE)
-            return _capped(d.decompress(data, max_length=SCRIPT_LIMIT + 1))
+            return _lzma_capped(d, data)
         if data[:1] == b"\x18":
             # One LZMA2 dictionary-size byte, then the 8-byte unpacked size.
             dict_size = (2 | data[0] & 1) << (data[0] // 2 + 11)
             lzma2 = {"id": lzma.FILTER_LZMA2, "dict_size": dict_size}
             d = lzma.LZMADecompressor(lzma.FORMAT_RAW, filters=[lzma2])
-            return _capped(d.decompress(data[9:], max_length=SCRIPT_LIMIT + 1))
+            return _lzma_capped(d, data[9:])
     except (lzma.LZMAError, ValueError) as e:
         raise InvalidInputFormat(
             f"Setup Factory script does not decompress: {e}"
@@ -155,7 +167,7 @@ def _entry_size(c: _Cursor, layout: _Layout) -> int:
     return size
 
 
-def entries_size(script: bytes, version: tuple[int, int]) -> int:
+def entries_size(script: bytes | bytearray, version: tuple[int, int]) -> int:
     """Sum of the compressed sizes of the script's CSetupFileData entries."""
     at = script.find(b"CSetupFileData")
     if at < 8:  # count and class header precede the name
@@ -175,7 +187,7 @@ DEPENDENCY_CLASS = b"\xff\xff\x01\x00\x10\x00CSetupDependency"
 DEPENDENCY_FILE_CLASS = b"\xff\xff\x01\x00\x0f\x00CDependencyFile"
 
 
-def dependency_size(script: bytes) -> int:
+def dependency_size(script: bytes | bytearray) -> int:
     """Return the stored size of the dependency modules' files, 0 if none.
 
     A dependency module (the VB6 run-time, say) keeps its files ahead of the
@@ -216,7 +228,7 @@ def _file_count(c: _Cursor) -> int:
     return count
 
 
-def _read_script(c: _Cursor, count: int, version: tuple[int, int]) -> bytes:
+def _read_script(c: _Cursor, count: int, version: tuple[int, int]) -> bytes | bytearray:
     """Walk the file table to its end; the decompressed script."""
     script = None
     for _ in range(count):
@@ -239,7 +251,7 @@ def _read_script(c: _Cursor, count: int, version: tuple[int, int]) -> bytes:
     return script
 
 
-def _blast_script(data: bytes) -> bytes:
+def _blast_script(data: bytes) -> bytearray:
     try:
         return _blast.decompress(data, SCRIPT_LIMIT)
     except ValueError as e:

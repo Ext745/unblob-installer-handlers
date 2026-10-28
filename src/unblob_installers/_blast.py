@@ -110,7 +110,7 @@ def _copy_match(s: _Bits, out: bytearray, dict_bits: int) -> bool:
     return True
 
 
-def decompress(data: bytes, limit: int) -> bytes:
+def decompress(data: bytes, limit: int) -> bytearray:
     """Decompress PKWARE DCL implode data, at most limit bytes of output."""
     if len(data) < 2:
         raise ValueError("PKWARE header truncated")
@@ -123,5 +123,5 @@ def decompress(data: bytes, limit: int) -> bytes:
         if not s.bits(1):
             out.append(s.decode(LIT) if coded else s.bits(8))
         elif not _copy_match(s, out, dict_bits):
-            return bytes(out)
+            return out  # not copied: a script near the limit is held once
     raise ValueError("PKWARE output over the limit")
