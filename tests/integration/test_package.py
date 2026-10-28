@@ -1,8 +1,13 @@
 """Package requirements needing an unblob process (FSD §5)."""
 
+import contextlib
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
+from unblob.file_utils import InvalidInputFormat
+from unblob.models import DirectoryExtractor, ExtractError
 
 import unblob_installers
 from tests.conftest import INPUTS
@@ -86,14 +91,47 @@ def test_tc_pkg_02_loads_with_plugins_path(tmp_path: Path):
     assert missing == []
 
 
-def test_tc_pkg_05_dependency_listing_covers_our_commands():
+# FSD FR-PKG-05: the external commands the handlers rely on, by name.
+FSD_COMMANDS = {"unshield", "innoextract", "sfextract", "7z"}
+
+
+def listed_commands() -> set[str]:
     out = subprocess.run(
         [UNBLOB, "--show-external-dependencies"],
         capture_output=True,
         text=True,
         check=False,
     )
-    listed = out.stdout
-    for handler in unblob_installers.HANDLERS:
-        for command in handler.get_dependencies():
-            assert command in listed, (handler.NAME, command)
+    rows = (line.split() for line in out.stdout.splitlines())
+    return {row[0] for row in rows if len(row) == 2 and row[1] in ("✓", "✗")}
+
+
+def test_tc_pkg_05_dependency_listing_covers_our_commands(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    listed = listed_commands()
+    assert listed >= FSD_COMMANDS, FSD_COMMANDS - listed
+
+    # What the extractors actually run, observed rather than declared: each
+    # one runs with subprocess.run recording the command and failing it.
+    invoked = set()
+
+    def record(command, *_args, **_kwargs):
+        invoked.add(Path(command[0]).name)
+        return subprocess.CompletedProcess(command, 3, b"", b"recorded")
+
+    monkeypatch.setattr(subprocess, "run", record)
+    sample = tmp_path / "data1.cab"
+    sample.write_bytes(b"input the recorder never reads")
+    for handler in [*unblob_installers.HANDLERS, *unblob_installers.DIR_HANDLERS]:
+        out = tmp_path / handler.NAME
+        out.mkdir()
+        extractor = handler.EXTRACTOR
+        assert extractor is not None
+        with contextlib.suppress(ExtractError, InvalidInputFormat):
+            if isinstance(extractor, DirectoryExtractor):
+                extractor.extract([sample], out)
+            else:
+                extractor.extract(sample, out)
+    assert invoked  # the recorder saw the tool-running extractors
+    assert invoked <= listed, invoked - listed
