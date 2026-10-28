@@ -110,10 +110,6 @@ def test_tc_hex_03_eof_record_alone_is_not_claimed():
     assert ihex().chunk_end(b":00000001FF\n", 0) is None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: an overlap conflict is an ExtractionProblem and the extraction succeeds",
-)
 def test_tc_hex_07_conflicting_overlap_fails_naming_both_lines(tmp_path: Path):
     text = (
         b"\n".join(

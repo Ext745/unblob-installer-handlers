@@ -18,15 +18,12 @@ from tests.conftest import chunks, run_unblob
 from tests.samples import PATTERN_BYTES, handler
 
 RANDOM_LEN = 4096
-# Intel HEX is a text format: a record starts a line, so the real sample
-# follows the decoy on a new line.
-SEPARATOR = {"ihex": b"\n"}
 
 
 def check_false_candidate_declined(name: str, sample: Path, tmp_path: Path) -> None:
     """FR-COM-01: pattern bytes, random bytes, then a real sample later on."""
     rng = random.Random(1701)  # noqa: S311 - fixed test data, not cryptography
-    decoy = PATTERN_BYTES[name] + rng.randbytes(RANDOM_LEN) + SEPARATOR.get(name, b"")
+    decoy = PATTERN_BYTES[name] + rng.randbytes(RANDOM_LEN)
     combined = tmp_path / f"decoy-then-{sample.name}"
     combined.write_bytes(decoy + sample.read_bytes())
 

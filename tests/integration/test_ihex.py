@@ -3,8 +3,6 @@
 import random
 from pathlib import Path
 
-import pytest
-
 from tests.conftest import FIXTURES, chunks, run_unblob
 
 FIXTURE = FIXTURES / "ihex" / "standard.hex"
@@ -36,10 +34,6 @@ def test_tc_hex_05_one_region_at_the_type_04_base(tmp_path: Path, payload: bytes
     assert regions[0].read_bytes() == payload
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="the feature is not implemented: the pattern needs a line start, so a first record glued to binary is missed",
-)
 def test_tc_hex_10_first_record_after_binary_keeps_its_base(
     tmp_path: Path, payload: bytes
 ):

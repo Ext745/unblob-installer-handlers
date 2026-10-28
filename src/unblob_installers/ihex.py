@@ -11,6 +11,7 @@ from typing import Protocol
 
 from unblob.file_utils import InvalidInputFormat
 from unblob.models import (
+    ExtractError,
     Extractor,
     ExtractResult,
     File,
@@ -21,7 +22,7 @@ from unblob.models import (
     Regex,
     ValidChunk,
 )
-from unblob.report import ExtractionProblem
+from unblob.report import UnknownError
 
 from ._extract import require_whole_chunk
 from ._regions import OverlapConflictError, assemble, region_name
@@ -122,15 +123,8 @@ class IntelHexExtractor(Extractor):
         try:
             regions = assemble(writes)
         except OverlapConflictError as exc:
-            return ExtractResult(
-                reports=[
-                    ExtractionProblem(
-                        path=str(inpath),
-                        problem=f"Intel HEX lines {exc.first} and {exc.second} write different bytes at 0x{exc.address:08x}",
-                        resolution="not extracted",
-                    )
-                ]
-            )
+            problem = f"Intel HEX lines {exc.first} and {exc.second} write different bytes at 0x{exc.address:08x}"
+            raise ExtractError(UnknownError(exception=ValueError(problem))) from None
         for address, data in regions:
             (outdir / region_name(address)).write_bytes(data)
         return ExtractResult(reports=[])
@@ -138,8 +132,10 @@ class IntelHexExtractor(Extractor):
 
 class IntelHexHandler(Handler):
     NAME = "ihex"
-    # A record header at the start of a line: ':' count(2) address(4) type 00-05.
-    PATTERNS = [Regex(r"(^|\n):[0-9A-Fa-f]{6}0[0-5]")]
+    # A record header: ':' count(2) address(4) type 00-05. Not anchored to a
+    # line start: images embedded in binary often lack a line break before
+    # their first record, which is usually the type-04 base.
+    PATTERNS = [Regex(r":[0-9A-Fa-f]{6}0[0-5]")]
     EXTRACTOR = IntelHexExtractor()
     DOC = HandlerDoc(
         name="Intel HEX",
@@ -163,10 +159,6 @@ class IntelHexHandler(Handler):
     )
 
     def calculate_chunk(self, file: File, start_offset: int) -> ValidChunk | None:
-        # The pattern may match the newline before the colon.
-        file.seek(start_offset)
-        if file.read(1) == b"\n":
-            start_offset += 1
         length = _chunk_length(file, start_offset)
         if length is None:
             raise InvalidInputFormat("not a complete, valid Intel HEX record run")
