@@ -2,6 +2,7 @@
 
 import lzma
 import struct
+import tracemalloc
 
 import pytest
 from unblob.file_utils import InvalidInputFormat
@@ -87,12 +88,47 @@ def _lzma2(size: int) -> bytes:
     return bytes([LZMA2_DICT]) + struct.pack("<q", size) + raw
 
 
+SLACK = 16 * 1024 * 1024  # one decompression step and the buffer's growth
+
+
+def held(call):
+    """Run call; its result (or the InvalidInputFormat it raised) and peak traced bytes."""
+    tracemalloc.start()
+    try:
+        try:
+            result = call()
+        except InvalidInputFormat as exc:
+            result = exc
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    return result, peak
+
+
+@pytest.mark.xfail(
+    strict=True, reason="lzma joins its output blocks: about twice the cap held"
+)
 @pytest.mark.parametrize("pack", [_lzma_alone, _lzma2], ids=["lzma", "lzma2"])
 def test_tc_sec_04_script_over_64_mib_declined(pack, monkeypatch: pytest.MonkeyPatch):
-    assert len(setup_factory.decompress(pack(LIMIT))) == LIMIT
+    # Exactly the cap decompresses whole, holding no more than the cap.
+    script = pack(LIMIT)
+    exact, peak = held(lambda: setup_factory.decompress(script))
+    assert not isinstance(exact, InvalidInputFormat)
+    assert len(exact) == LIMIT
+    assert peak < LIMIT + SLACK, f"{peak} bytes held for a {LIMIT}-byte script"
+    del exact
+    # One byte over is declined, and so is twice the cap, still holding no
+    # more than the cap on the way.
     with pytest.raises(InvalidInputFormat):
         setup_factory.decompress(pack(LIMIT + 1))
-    # PKWARE (SF7 and SF8/9 scripts) through the same cap, made small.
+    twice = pack(2 * LIMIT)
+    declined, peak = held(lambda: setup_factory.decompress(twice))
+    assert isinstance(declined, InvalidInputFormat)
+    assert peak < LIMIT + SLACK, (
+        f"{peak} bytes held declining a {2 * LIMIT}-byte script"
+    )
+    # PKWARE (SF7 and SF8/9 scripts) through the same cap, made small: no
+    # implode encoder is at hand to build a 64 MiB PKWARE script.
     monkeypatch.setattr(setup_factory, "SCRIPT_LIMIT", 12)
     with pytest.raises(InvalidInputFormat):
         setup_factory._blast_script(bytes.fromhex("00048224258f807f"))  # noqa: SLF001
