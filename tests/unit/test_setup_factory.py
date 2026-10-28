@@ -1,5 +1,6 @@
-"""Setup Factory pure core (FSD §8): PKWARE scripts of Setup Factory 8 and 9, dependency modules."""
+"""Setup Factory pure core (FSD §8, NFR-SEC-04): PKWARE scripts of Setup Factory 8 and 9, dependency modules, file-table and script limits."""
 
+import lzma
 import struct
 
 import pytest
@@ -48,3 +49,51 @@ def test_tc_sf_12_several_modules_or_files_are_declined(modules, files, message)
     assert setup_factory.dependency_size(_script(1, 1)) == 1234
     with pytest.raises(InvalidInputFormat, match=message):
         setup_factory.dependency_size(_script(modules, files))
+
+
+def _cursor(table: bytes) -> setup_factory._Cursor:
+    return setup_factory._Cursor(table, 0, len(table))  # noqa: SLF001 - pure-core test
+
+
+@pytest.mark.parametrize("count, accepted", [(1000, True), (1001, False)])
+def test_tc_sf_13_more_than_1000_files_declined(count: int, accepted: bool):
+    # SF8+: irsetup.exe size, lua5.1.dll size and data, then the file count.
+    sf8 = struct.pack("<qq", 0, 2000) + bytes(2000) + struct.pack("<I", count)
+    # SF7: irsetup.exe size (32-bit), then the file count.
+    sf7 = struct.pack("<II", 0, count)
+    readers = [
+        (setup_factory._file_count, sf8),  # noqa: SLF001
+        (setup_factory._sf7_file_count, sf7),  # noqa: SLF001
+    ]
+    for read, table in readers:
+        if accepted:
+            assert read(_cursor(table)) == count
+        else:
+            with pytest.raises(InvalidInputFormat, match="implausible"):
+                read(_cursor(table))
+
+
+LIMIT = setup_factory.SCRIPT_LIMIT
+LZMA2_DICT = 0x18  # dictionary-size byte: 16 MiB
+
+
+def _lzma_alone(size: int) -> bytes:
+    return lzma.compress(bytes(size), format=lzma.FORMAT_ALONE)
+
+
+def _lzma2(size: int) -> bytes:
+    filters = [{"id": lzma.FILTER_LZMA2, "dict_size": 16 * 1024 * 1024}]
+    raw = lzma.compress(bytes(size), format=lzma.FORMAT_RAW, filters=filters)
+    return bytes([LZMA2_DICT]) + struct.pack("<q", size) + raw
+
+
+@pytest.mark.xfail(strict=True, reason="LZMA scripts are cut at the cap, not declined")
+@pytest.mark.parametrize("pack", [_lzma_alone, _lzma2], ids=["lzma", "lzma2"])
+def test_tc_sec_04_script_over_64_mib_declined(pack, monkeypatch: pytest.MonkeyPatch):
+    assert len(setup_factory.decompress(pack(LIMIT))) == LIMIT
+    with pytest.raises(InvalidInputFormat):
+        setup_factory.decompress(pack(LIMIT + 1))
+    # PKWARE (SF7 and SF8/9 scripts) through the same cap, made small.
+    monkeypatch.setattr(setup_factory, "SCRIPT_LIMIT", 12)
+    with pytest.raises(InvalidInputFormat):
+        setup_factory._blast_script(bytes.fromhex("00048224258f807f"))  # noqa: SLF001
