@@ -45,6 +45,9 @@ imgtool dumpinfo archive/mcuboot/__input__/protected.bin | grep -q "Protected TL
 python3 ../fixtures/installshield_cab.py /tmp/firmware.bin archive/installshield/__input__/standard.cab
 cp archive/installshield/__input__/standard.cab /tmp/data1.cab
 unshield -d /tmp/isout x /tmp/data1.cab >/dev/null && cmp /tmp/firmware.bin /tmp/isout/Firmware/app/firmware.bin && echo "installshield: unshield extracts firmware.bin identical"
+python3 ../fixtures/installshield_cab.py /tmp/firmware.bin archive/installshield/__input__/set.tar --set
+mkdir -p /tmp/isset && tar -xf archive/installshield/__input__/set.tar -C /tmp/isset
+unshield -d /tmp/isset-out x /tmp/isset/set/data1.hdr >/dev/null && cmp /tmp/firmware.bin /tmp/isset-out/Firmware/app/firmware.bin && echo "installshield: the data1.hdr + data1.cab set extracts firmware.bin identical"
 
 # NSIS: makensis 3.10; build time and file mtime pinned so the output is reproducible
 mkdir -p /tmp/nsisbuild && cp ../fixtures/standard.nsi /tmp/nsisbuild/ && cp /tmp/firmware.bin /tmp/nsisbuild/firmware.bin
@@ -52,4 +55,4 @@ touch -d @1700000000 /tmp/nsisbuild/firmware.bin
 (cd /tmp/nsisbuild && SOURCE_DATE_EPOCH=1700000000 makensis -V2 standard.nsi >/dev/null) && cp /tmp/nsisbuild/standard.exe executable/nsis/__input__/standard.exe
 7z e -y -bd -o/tmp/nsisout executable/nsis/__input__/standard.exe firmware.bin >/dev/null && cmp /tmp/firmware.bin /tmp/nsisout/firmware.bin && echo "nsis: payload extracted identical"
 '
-cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab} executable/nsis/__input__/standard.exe
+cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab,tar} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab,tar} executable/nsis/__input__/standard.exe

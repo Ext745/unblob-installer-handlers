@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from unblob.report import MultiFileReport
 
 from tests.conftest import INPUTS, chunks, run_unblob, tree
 
@@ -42,4 +43,27 @@ def test_tc_isc_08_fixture_cabinet_chunked_and_extracted_as_unshield_does(
     run_unblob(FIXTURE, tmp_path / "x", max_depth=1)
     (out,) = [p for p in (tmp_path / "x").iterdir() if p.is_dir()]
     assert tree(out) == tree(oracle)
+    assert (out / "Firmware" / "app" / "firmware.bin").read_bytes() == payload
+
+
+def test_tc_isc_09_fixture_set_extracted_once_from_hdr_and_cab(
+    tmp_path: Path, payload: bytes
+):
+    # FR-ISC-04: a version 5 set unpacked from a tar is one installshield_set
+    # extraction; neither file alone is an installshield chunk.
+    if shutil.which("unshield") is None:
+        pytest.skip("precondition unmet: unshield (extractors) not installed")
+    result = run_unblob(INPUTS["installshield"] / "set.tar", tmp_path, max_depth=2)
+
+    multi = [
+        r
+        for t in result.results
+        for r in t.reports
+        if isinstance(r, MultiFileReport) and r.handler_name == "installshield_set"
+    ]
+    assert len(multi) == 1
+    assert multi[0].extraction_reports == []
+    assert [c for c in chunks(result) if c.handler_name == "installshield"] == []
+    (out,) = list(tmp_path.rglob("data1_extract"))
+    assert sorted(tree(out)) == ["Firmware/app/firmware.bin", "Firmware/app/readme.txt"]
     assert (out / "Firmware" / "app" / "firmware.bin").read_bytes() == payload

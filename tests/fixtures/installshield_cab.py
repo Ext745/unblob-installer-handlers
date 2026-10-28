@@ -1,6 +1,11 @@
-"""Write a self-contained InstallShield cabinet of the version 5 layout.
+"""Write an InstallShield cabinet of the version 5 layout, whole or as a set.
 
 Usage: python3 installshield_cab.py <payload file> <output .cab>
+       python3 installshield_cab.py <payload file> <output .tar> --set
+
+The set is data1.hdr (headers and cabinet descriptor) and data1.cab (headers,
+a zero-size descriptor and the file data, at the same offsets) in a tar with
+fixed metadata, as an installer would unpack them.
 
 The layout is as unshield 1.6.2 reads it (lib/cabfile.h, lib/libunshield.c,
 lib/file.c, lib/file_group.c; MIT): a 20-byte common header, a 40-byte
@@ -11,13 +16,16 @@ chunks, each with a 2-byte length) and readme.txt stored. Version 5 keeps no
 MD5, so none is written. Deterministic: same payload, same bytes.
 """
 
+import io
 import struct
 import sys
+import tarfile
 import zlib
 from pathlib import Path
 
 SIGNATURE = b"ISc("
 VERSION = 0x01000004  # (version >> 12) & 0xF == 0: the version 5 layout
+COMMON_SIZE = 20
 DESCRIPTOR_OFFSET = 0x200
 FILE_TABLE_OFFSET = 0x280  # relative to the descriptor, after its 0x276 bytes
 FILE_COMPRESSED = 0x4
@@ -34,7 +42,8 @@ def compress(data: bytes) -> bytes:
     return out
 
 
-def cabinet(payload: bytes) -> bytes:
+def cabinet(payload: bytes) -> tuple[bytes, bytes, int]:
+    """Headers with the descriptor, the file data, and the data's offset."""
     files = [  # (name, stored bytes, expanded size, flags)
         ("firmware.bin", compress(payload), len(payload), FILE_COMPRESSED),
         ("readme.txt", README, len(README), 0),
@@ -90,13 +99,43 @@ def cabinet(payload: bytes) -> bytes:
     struct.pack_into("<I", fields, 0x3E, group_list_at)  # file_group_offsets[0]
     descriptor = bytes(fields) + table + group
 
+    volume = struct.pack("<10I", data_at, 0, 0, len(files) - 1, 0, 0, 0, 0, 0, 0)
+    data = b"".join(stored for _, stored, _, _ in files)
+    return headers(descriptor_size, volume) + descriptor, data, data_at
+
+
+def headers(descriptor_size: int, volume: bytes) -> bytes:
     head = struct.pack(
         "<4sIIII", SIGNATURE, VERSION, 0, DESCRIPTOR_OFFSET, descriptor_size
     )
-    volume = struct.pack("<10I", data_at, 0, 0, len(files) - 1, 0, 0, 0, 0, 0, 0)
-    data = b"".join(stored for _, stored, _, _ in files)
-    return (head + volume).ljust(DESCRIPTOR_OFFSET, b"\0") + descriptor + data
+    return (head + volume).ljust(DESCRIPTOR_OFFSET, b"\0")
+
+
+def whole(payload: bytes) -> bytes:
+    head, data, _ = cabinet(payload)
+    return head + data
+
+
+def split(payload: bytes) -> dict[str, bytes]:
+    head, data, data_at = cabinet(payload)
+    volume = head[COMMON_SIZE:DESCRIPTOR_OFFSET]
+    cab = headers(0, volume).ljust(data_at, b"\0") + data
+    return {"data1.hdr": head, "data1.cab": cab}
+
+
+def tar_of(members: dict[str, bytes]) -> bytes:
+    out = io.BytesIO()
+    with tarfile.open(fileobj=out, mode="w", format=tarfile.USTAR_FORMAT) as tar:
+        for name, data in members.items():
+            info = tarfile.TarInfo(f"set/{name}")
+            info.size, info.mtime, info.mode = len(data), 0, 0o644
+            tar.addfile(info, io.BytesIO(data))
+    return out.getvalue()
 
 
 if __name__ == "__main__":
-    Path(sys.argv[2]).write_bytes(cabinet(Path(sys.argv[1]).read_bytes()))
+    payload = Path(sys.argv[1]).read_bytes()
+    if sys.argv[3:] == ["--set"]:
+        Path(sys.argv[2]).write_bytes(tar_of(split(payload)))
+    else:
+        Path(sys.argv[2]).write_bytes(whole(payload))
