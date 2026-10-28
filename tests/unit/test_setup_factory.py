@@ -132,3 +132,36 @@ def test_tc_sec_04_script_over_64_mib_declined(pack, monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(setup_factory, "SCRIPT_LIMIT", 12)
     with pytest.raises(InvalidInputFormat):
         setup_factory._blast_script(bytes.fromhex("00048224258f807f"))  # noqa: SLF001
+
+
+MIB = 1024 * 1024
+UNBOUNDED = pytest.mark.xfail(
+    strict=True, reason="the header's dictionary size is not bounded"
+)
+
+
+def _lzma_declaring(dict_size: int) -> bytes:
+    """Build a 1 KiB LZMA (alone) script whose header declares dict_size."""
+    script = lzma.compress(bytes(1024), format=lzma.FORMAT_ALONE)
+    return script[:1] + struct.pack("<I", dict_size) + script[5:]
+
+
+@pytest.mark.parametrize(
+    "dict_size, accepted",
+    [
+        (64 * MIB, True),
+        pytest.param(65 * MIB, False, marks=UNBOUNDED),
+        pytest.param(1 << 30, False, marks=UNBOUNDED),
+        pytest.param(0xFFFFFF00, False, marks=UNBOUNDED),
+    ],
+    ids=["64MiB", "65MiB", "1GiB", "4GiB"],
+)
+def test_tc_sec_05_lzma_dictionary_bounded(dict_size: int, accepted: bool):
+    script = _lzma_declaring(dict_size)
+    # held() lets only InvalidInputFormat through: a MemoryError fails the test.
+    result, peak = held(lambda: setup_factory.decompress(script))
+    if accepted:
+        assert result == bytes(1024)
+    else:
+        assert isinstance(result, InvalidInputFormat)
+        assert peak < MIB, f"{peak} bytes allocated for a {len(script)}-byte script"
