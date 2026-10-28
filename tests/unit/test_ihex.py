@@ -5,6 +5,8 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
+from unblob.models import ExtractError
+from unblob.report import ErrorReport
 
 from tests.conftest import FIXTURES
 
@@ -102,3 +104,36 @@ def test_tc_hex_09_gap_between_base_addresses_gives_two_regions(tmp_path: Path):
         "0x08000000.bin": b"\x11" * 16,
         "0x08010000.bin": b"\x22" * 16,
     }
+
+
+def test_tc_hex_03_eof_record_alone_is_not_claimed():
+    assert ihex().chunk_end(b":00000001FF\n", 0) is None
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="the feature is not implemented: an overlap conflict is an ExtractionProblem and the extraction succeeds",
+)
+def test_tc_hex_07_conflicting_overlap_fails_naming_both_lines(tmp_path: Path):
+    text = (
+        b"\n".join(
+            [
+                record(0x00, 0x0000, b"\x11" * 16),
+                record(0x00, 0x0010, b"\x22" * 16),
+                record(0x00, 0x0008, b"\x33" * 4),  # line 3 rewrites line 1's bytes
+                record(0x01, 0, b""),
+            ]
+        )
+        + b"\n"
+    )
+    source = tmp_path / "in.hex"
+    source.write_bytes(text)
+    out = tmp_path / "out"
+    out.mkdir()
+    with pytest.raises(ExtractError) as raised:
+        ihex().IntelHexExtractor().extract(source, out)
+    errors = [r for r in raised.value.reports if isinstance(r, ErrorReport)]
+    assert errors, raised.value.reports
+    message = str(errors[0])
+    assert "lines 1 and 3" in message
+    assert not any(out.iterdir())  # no region written, the last write did not win
