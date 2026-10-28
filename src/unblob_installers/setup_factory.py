@@ -1,4 +1,4 @@
-"""Setup Factory handler (FSD §8), for Setup Factory 8 to 10.
+"""Setup Factory handler (FSD §8), for Setup Factory 7 to 10.
 
 The overlay after the PE's last section opens with a signature, then holds
 irsetup.exe, optionally lua5.1.dll, and a table of named files that includes
@@ -6,12 +6,14 @@ the compressed script irsetup.dat. The installed files follow the table; only
 the script's CSetupFileData entries give their sizes, so the chunk end is
 found by decompressing the script and summing them. The layout follows
 sfextract's setupfactory8.py (MIT) with this project's Setup Factory 10
-patch. Extraction runs sfextract.
+patch, and for Setup Factory 7 sfextract's setupfactory7.py (MIT): a shorter
+signature, an XOR-ed irsetup.exe, 32-bit sizes. Extraction runs sfextract.
 """
 
 import lzma
 import struct
 import zlib
+from dataclasses import dataclass
 from pathlib import Path
 
 from unblob.file_utils import InvalidInputFormat
@@ -36,11 +38,14 @@ from ._pe import certificate_end, overlay_start
 SIGNATURE = bytes.fromhex("e0e0e1e1e2e2e3e3e4e4e5e5e6e6e7e7")
 HEADER_SIZE = 26  # signature and 10 bytes nobody has decoded
 NAME_SIZE = 264
+SIGNATURE_7 = bytes.fromhex("e0e1e2e3e4e5e6e7")
+NAME_SIZE_7 = 260
+XORED_MZ = bytes(b ^ 0x07 for b in b"MZ")  # SF7 XORs irsetup.exe's start with 0x07
 LUA_DLL_HINT = 1000  # a file count above this is lua5.1.dll's size instead
 SCRIPT_NAME = b"irsetup.dat"
 SCRIPT_LIMIT = 64 * 1024 * 1024  # decompressed script; the sample's is 132 KiB
 VERSION_INFO = struct.pack("<I", 0xFEEF04BD)  # VS_FIXEDFILEINFO signature
-SUPPORTED_MAJORS = (8, 9, 10)
+SUPPORTED_MAJORS = (7, 8, 9, 10)
 
 
 class _Cursor:
@@ -94,22 +99,33 @@ def decompress(data: bytes) -> bytes:
     raise InvalidInputFormat("unknown Setup Factory compression")
 
 
-def _layout(version: tuple[int, int]) -> tuple[int, int]:
-    """Bytes after the destination directory, and the entry trailer."""
+@dataclass(frozen=True)
+class _Layout:
+    """Where one CSetupFileData entry's fields sit, by Setup Factory version."""
+
+    before_dest: int  # sizes, attributes and timestamps before the destination
+    after_dest: int
+    size_format: str  # the compressed size
+    trailer: int
+
+
+def _layout(version: tuple[int, int]) -> _Layout:
     if version >= (10, 0):
-        return 12, 3
+        return _Layout(72, 12, "<q", 3)
     if version >= (9, 3):
-        return 11, 8
-    return 10, 8
+        return _Layout(72, 11, "<q", 8)
+    if version >= (8, 0):
+        return _Layout(72, 10, "<q", 8)
+    return _Layout(44, 10, "<I", 8)
 
 
-def _entry_size(c: _Cursor, after_dest: int, trailer: int) -> int:
+def _entry_size(c: _Cursor, layout: _Layout) -> int:
     """Read one CSetupFileData entry; its compressed size."""
     for _ in range(6):  # source path, base name, directory, suffix, folder, description
         c.string()
-    c.skip(72)  # sizes, attributes and three timestamps
+    c.skip(layout.before_dest)
     c.string()  # destination directory
-    c.skip(after_dest)
+    c.skip(layout.after_dest)
     for _ in range(5):  # shortcut location, comment, description, arguments, start dir
         c.string()
     c.skip(1)
@@ -125,10 +141,10 @@ def _entry_size(c: _Cursor, after_dest: int, trailer: int) -> int:
     for _ in range(c.unpack("<H")):
         c.string()  # package names
     c.string()  # notes
-    size = c.unpack("<q")
+    size = c.unpack(layout.size_format)
     if size < 0:
         raise InvalidInputFormat("negative Setup Factory file size")
-    c.skip(4 + trailer)  # CRC and trailer
+    c.skip(4 + layout.trailer)  # CRC and trailer
     return size
 
 
@@ -143,8 +159,8 @@ def entries_size(script: bytes, version: tuple[int, int]) -> int:
     if c.take(c.unpack("<H")) != b"CSetupFileData":
         raise InvalidInputFormat("malformed CSetupFileData header")
     c.skip(5)
-    after_dest, trailer = _layout(version)
-    return sum(_entry_size(c, after_dest, trailer) for _ in range(count))
+    layout = _layout(version)
+    return sum(_entry_size(c, layout) for _ in range(count))
 
 
 def _file_count(c: _Cursor) -> int:
@@ -160,17 +176,22 @@ def _file_count(c: _Cursor) -> int:
     return count
 
 
-def _read_script(c: _Cursor, count: int) -> bytes:
+def _read_script(c: _Cursor, count: int, version: tuple[int, int]) -> bytes:
     """Walk the file table to its end; the decompressed script."""
     script = None
     for _ in range(count):
-        name = c.take(NAME_SIZE).split(b"\0", 1)[0]
-        size = c.unpack("<q")
-        crc = c.unpack("<I")
-        c.skip(4)
+        if version[0] == 7:  # 32-bit sizes, files always PKWARE-imploded
+            name = c.take(NAME_SIZE_7).split(b"\0", 1)[0]
+            size = c.unpack("<I")
+            crc = c.unpack("<I")
+        else:
+            name = c.take(NAME_SIZE).split(b"\0", 1)[0]
+            size = c.unpack("<q")
+            crc = c.unpack("<I")
+            c.skip(4)
         data = c.take(size)
         if name == SCRIPT_NAME:
-            script = decompress(data)
+            script = _blast_script(data) if version[0] == 7 else decompress(data)
             if crc and zlib.crc32(script) != crc:
                 raise InvalidInputFormat("Setup Factory script CRC mismatch")
     if script is None:
@@ -178,17 +199,53 @@ def _read_script(c: _Cursor, count: int) -> bytes:
     return script
 
 
+def _blast_script(data: bytes) -> bytes:
+    try:
+        return _blast.decompress(data, SCRIPT_LIMIT)
+    except ValueError as e:
+        raise InvalidInputFormat(
+            f"Setup Factory script does not decompress: {e}"
+        ) from e
+
+
+def _sf7_table(file: File, overlay: int) -> _Cursor:
+    """Cursor at SF7's irsetup.exe size field.
+
+    It follows the signature directly in 7.0.1 and 7.0.3 and one byte later
+    in 7.0.6; the XOR-ed "MZ" after it shows which.
+    """
+    for shift in (0, 1):
+        at = overlay + len(SIGNATURE_7) + shift
+        if bytes(file[at + 4 : at + 6]) == XORED_MZ:
+            return _Cursor(file, at, len(file))
+    raise InvalidInputFormat("no Setup Factory 7 run-time after the signature")
+
+
+def _sf7_file_count(c: _Cursor) -> int:
+    c.skip(c.unpack("<I"))  # irsetup.exe
+    count = c.unpack("<I")
+    if count > LUA_DLL_HINT:
+        raise InvalidInputFormat("implausible Setup Factory file count")
+    return count
+
+
 def data_end(file: File, start: int) -> int:
     """End of the last installed file's data in the installer at start."""
     overlay = overlay_start(file, start)
-    if bytes(file[overlay : overlay + len(SIGNATURE)]) != SIGNATURE:
+    if bytes(file[overlay : overlay + len(SIGNATURE)]) == SIGNATURE:
+        c = _Cursor(file, overlay + HEADER_SIZE, len(file))
+        majors = SUPPORTED_MAJORS[1:]
+    elif bytes(file[overlay : overlay + len(SIGNATURE_7)]) == SIGNATURE_7:
+        c = _sf7_table(file, overlay)
+        majors = (7,)
+    else:
         raise InvalidInputFormat("no Setup Factory overlay signature")
     version = runtime_version(file, start, overlay)
-    if version[0] not in SUPPORTED_MAJORS:
+    if version[0] not in majors:
         raise InvalidInputFormat(f"Setup Factory {version[0]} is not supported")
 
-    c = _Cursor(file, overlay + HEADER_SIZE, len(file))
-    script = _read_script(c, _file_count(c))
+    count = _sf7_file_count(c) if version[0] == 7 else _file_count(c)
+    script = _read_script(c, count, version)
     end = c.pos + entries_size(script, version)
     if end > len(file):
         raise InvalidInputFormat("Setup Factory data runs past the end of the data")
@@ -235,8 +292,7 @@ class SetupFactoryHandler(Handler):
             ),
         ],
         limitations=[
-            "Setup Factory 7 and older are not recognised",
-            "Only Setup Factory 10 has been checked against a real installer",
+            "Setup Factory 6 and older are not recognised",
         ],
     )
 

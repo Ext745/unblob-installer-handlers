@@ -100,19 +100,30 @@ def test_tc_sf_04_real_vendor_installer_equals_sfextract(
     check_matches_sfextract(realfiles, tmp_path, name)
 
 
+SF7 = ["sf7.0.1.0-ycs.exe", "sf7.0.3.0-setup365dni.exe", "sf7.0.6.1-FLVPlayerSetup.exe"]
+
+
+@pytest.mark.parametrize("name", SF7)
+def test_tc_sf_10_sf7_is_one_setup_factory_chunk(
+    realfiles: Path, tmp_path: Path, name: str
+):
+    source = realfiles / INDEX / name
+    found = chunks(run_unblob(source, tmp_path / "x", max_depth=1))
+    assert [(c.handler_name, c.start_offset, c.end_offset) for c in found] == [
+        ("setup_factory", 0, source.stat().st_size)
+    ]
+
+
+def test_tc_sf_07_sf7_installer_equals_sfextract(realfiles: Path, tmp_path: Path):
+    check_matches_sfextract(realfiles, tmp_path, "sf7.0.6.1-FLVPlayerSetup.exe")
+
+
 @pytest.mark.xfail(
     strict=True,
-    reason="the feature is not implemented: Setup Factory 7 is not recognised (no 8-10 overlay signature); sfextract also fails on 7.0.1.0 and 7.0.3.0",
+    reason="the feature is not implemented: sfextract assumes a byte between the SF7 signature and irsetup.exe, which 7.0.1 and 7.0.3 do not have",
 )
-@pytest.mark.parametrize(
-    "name",
-    [
-        "sf7.0.1.0-ycs.exe",
-        "sf7.0.3.0-setup365dni.exe",
-        "sf7.0.6.1-FLVPlayerSetup.exe",
-    ],
-)
-def test_tc_sf_07_sf7_installers_equal_sfextract(
+@pytest.mark.parametrize("name", SF7[:2])
+def test_tc_sf_11_early_sf7_installers_equal_sfextract(
     realfiles: Path, tmp_path: Path, name: str
 ):
     check_matches_sfextract(realfiles, tmp_path, name)
