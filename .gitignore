@@ -6,3 +6,4 @@ dist/
 *_extract/
 .devcontainer/.env
 test-results/
+unblob.log
