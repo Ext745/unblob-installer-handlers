@@ -9,7 +9,7 @@ from types import ModuleType
 import pytest
 from unblob.file_utils import File, InvalidInputFormat
 
-from tests.conftest import FIXTURES
+from tests.conftest import INPUTS
 
 
 def dfuse() -> ModuleType:
@@ -25,7 +25,7 @@ def test_tc_dfu_05_element_path():
     assert str(path(1, None, 0x1FFF7800)) == "target1_unnamed/0x1fff7800.bin"
 
 
-FIXTURE = (FIXTURES / "dfuse" / "standard.dfu").read_bytes()
+FIXTURE = (INPUTS["dfuse"] / "standard.dfu").read_bytes()
 PREFIX_SIZE, TARGET_SIZE = 11, 274  # UM0391: DfuSe prefix, Target prefix
 ELEMENT_SIZE_FIELD = PREFIX_SIZE + TARGET_SIZE + 4  # first element's dwElementSize
 

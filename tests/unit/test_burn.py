@@ -9,7 +9,7 @@ import pytest
 from unblob.file_utils import File, InvalidInputFormat
 from unblob.report import CalculateChunkExceptionReport
 
-from tests.conftest import FIXTURES, chunks, run_unblob
+from tests.conftest import INPUTS, chunks, run_unblob
 from unblob_installers._pe import find_section
 
 
@@ -49,7 +49,7 @@ def test_tc_burn_07_container_walk_three_attached():
     ]
 
 
-FIXTURE = FIXTURES / "burn" / "standard.exe"
+FIXTURE = INPUTS["burn"] / "standard.exe"
 COUNT_FIELD = 4 + 4 + 16 + 4 * 5  # magic, version, GUID, stub … format
 SIZES = COUNT_FIELD + 4  # UX container size, then the attached ones
 

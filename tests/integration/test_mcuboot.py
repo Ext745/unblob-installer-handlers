@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import FIXTURES, chunks, run_unblob
+from tests.conftest import INPUTS, chunks, run_unblob
 
-FIXTURE = FIXTURES / "mcuboot" / "standard.bin"
+FIXTURE = INPUTS["mcuboot"] / "standard.bin"
 OFFSET = 0x10000
 
 
@@ -65,7 +65,7 @@ def test_tc_mcb_08_encrypted_image_written_as_ciphertext(
     imgtool = shutil.which("imgtool")
     if imgtool is None:
         pytest.skip("precondition unmet: imgtool (oracles) not installed")
-    encrypted = FIXTURES / "mcuboot" / "encrypted.bin"
+    encrypted = INPUTS["mcuboot"] / "encrypted.bin"
     info = subprocess.run(
         [imgtool, "dumpinfo", str(encrypted)],
         capture_output=True,

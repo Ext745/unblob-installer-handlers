@@ -7,9 +7,9 @@ from types import ModuleType
 import pytest
 from unblob.file_utils import InvalidInputFormat
 
-from tests.conftest import FIXTURES
+from tests.conftest import INPUTS
 
-FIXTURE = (FIXTURES / "mcuboot" / "standard.bin").read_bytes()
+FIXTURE = (INPUTS["mcuboot"] / "standard.bin").read_bytes()
 
 
 def mcuboot() -> ModuleType:
@@ -46,7 +46,7 @@ def test_tc_mcb_07_encrypted_follows_the_flag_bits():
     assert info(with_flags(FIXTURE, 0x1 | 0x20)).encrypted is False  # PIC, RAM_LOAD
 
 
-PROTECTED = (FIXTURES / "mcuboot" / "protected.bin").read_bytes()
+PROTECTED = (INPUTS["mcuboot"] / "protected.bin").read_bytes()
 
 
 def test_tc_mcb_03_protected_tlvs_without_their_magic_are_not_claimed():

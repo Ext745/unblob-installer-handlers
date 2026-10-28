@@ -34,5 +34,6 @@ docker run --rm -v "$WORK":/w ubuntu:26.04 bash -euc "
   wine /tmp/wix/candle.exe -nologo -ext WixBalExtension bundle.wxs
   wine /tmp/wix/light.exe -nologo -ext WixBalExtension bundle.wixobj -o standard.exe
 "
-cp "$WORK/standard.exe" "$HERE/burn/standard.exe"
-(cd "$HERE" && sha256sum burn/standard.exe && ls -l burn/standard.exe | awk '{print $5, $9}')
+OUT="$HERE/../integration/executable/wix_burn/__input__"
+cp "$WORK/standard.exe" "$OUT/standard.exe"
+(cd "$OUT" && sha256sum standard.exe && ls -l standard.exe | awk '{print $5, $9}')

@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import FIXTURES, chunks, run_unblob
+from tests.conftest import INPUTS, chunks, run_unblob
 
-FIXTURE = FIXTURES / "ihex" / "standard.hex"
+FIXTURE = INPUTS["ihex"] / "standard.hex"
 
 
 def test_tc_hex_01_chunk_from_first_colon_to_after_eof_line(tmp_path: Path):
@@ -61,7 +61,7 @@ def test_tc_hex_10_first_record_after_binary_keeps_its_base(
     assert regions[0].read_bytes() == payload
 
 
-CORPUS = sorted((FIXTURES / "text-corpus").iterdir())
+CORPUS = sorted((INPUTS["text-corpus"]).iterdir())
 
 
 @pytest.mark.parametrize("sample", CORPUS, ids=[p.name for p in CORPUS])

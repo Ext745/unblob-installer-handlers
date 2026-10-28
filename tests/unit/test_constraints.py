@@ -10,14 +10,14 @@ import pytest
 
 ROOT = Path(__file__).parents[2]
 BIN = Path(sys.executable).parent  # the environment under test
-FIXTURES = ROOT / "tests" / "fixtures"
-SOURCES = (FIXTURES / "SOURCES.md").read_text()
+INTEGRATION = ROOT / "tests" / "integration"
+SOURCES = (ROOT / "tests" / "fixtures" / "SOURCES.md").read_text()
 MIB = 1024 * 1024
 
 
 def committed_fixtures() -> list[Path]:
-    """List the fixture files themselves: tests/fixtures/<format>/<file>."""
-    return sorted(p for p in FIXTURES.glob("*/*") if p.is_file())
+    """List the fixture files themselves: tests/integration/**/__input__/<file>."""
+    return sorted(p for p in INTEGRATION.glob("**/__input__/*") if p.is_file())
 
 
 def progress_rows() -> dict[str, list[str]]:
@@ -75,9 +75,9 @@ def test_tc_con_11_sfextract_pr_recorded():
 
 def test_tc_con_08_every_fixture_has_a_source_record():
     unrecorded = [
-        str(p.relative_to(FIXTURES))
+        str(p.relative_to(INTEGRATION))
         for p in committed_fixtures()
-        if f"`{p.relative_to(FIXTURES)}`" not in SOURCES
+        if f"`{p.relative_to(INTEGRATION)}`" not in SOURCES
     ]
     assert unrecorded == []
 
@@ -85,9 +85,10 @@ def test_tc_con_08_every_fixture_has_a_source_record():
 def test_tc_con_10_fixtures_over_1_mib_are_listed_exceptions():
     exceptions = SOURCES.split("## Size exceptions", 1)[1].split("\n## ", 1)[0]
     oversized = [
-        str(p.relative_to(FIXTURES))
+        str(p.relative_to(INTEGRATION))
         for p in committed_fixtures()
-        if p.stat().st_size > MIB and f"`{p.relative_to(FIXTURES)}`" not in exceptions
+        if p.stat().st_size > MIB
+        and f"`{p.relative_to(INTEGRATION)}`" not in exceptions
     ]
     assert oversized == []
 

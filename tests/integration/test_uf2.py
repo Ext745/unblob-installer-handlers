@@ -3,9 +3,9 @@
 import random
 from pathlib import Path
 
-from tests.conftest import FIXTURES, chunks, run_unblob
+from tests.conftest import INPUTS, chunks, run_unblob
 
-FIXTURE = FIXTURES / "uf2" / "standard.uf2"
+FIXTURE = INPUTS["uf2"] / "standard.uf2"
 
 
 def test_tc_uf2_02_chunk_is_exactly_the_blocks(tmp_path: Path):

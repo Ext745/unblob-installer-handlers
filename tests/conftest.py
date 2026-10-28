@@ -13,6 +13,20 @@ from unblob.report import ChunkReport
 import unblob_installers
 
 FIXTURES = Path(__file__).parent / "fixtures"
+INTEGRATION = Path(__file__).parent / "integration"
+
+# Committed fixtures, in unblob's integration layout (FSD C-09):
+# tests/integration/<category>/<name>/__input__.
+INPUTS = {
+    "uf2": INTEGRATION / "archive" / "uf2" / "__input__",
+    "ihex": INTEGRATION / "archive" / "ihex" / "__input__",
+    "text-corpus": INTEGRATION / "archive" / "ihex" / "text-corpus" / "__input__",
+    "dfuse": INTEGRATION / "archive" / "dfuse" / "__input__",
+    "mcuboot": INTEGRATION / "archive" / "mcuboot" / "__input__",
+    "inno": INTEGRATION / "executable" / "inno" / "__input__",
+    "burn": INTEGRATION / "executable" / "wix_burn" / "__input__",
+    "nsis": INTEGRATION / "executable" / "nsis" / "__input__",
+}
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

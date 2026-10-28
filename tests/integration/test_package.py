@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 import unblob_installers
-from tests.conftest import FIXTURES
+from tests.conftest import INPUTS
 
 PACKAGE_DIR = Path(unblob_installers.__file__).parent
 # The unblob of the environment under test, never another one on PATH.
@@ -39,7 +39,7 @@ def test_tc_pkg_02_loads_with_plugins_path(tmp_path: Path):
             str(tmp_path / "x"),
             "--report",
             str(tmp_path / "r.json"),
-            str(FIXTURES / "uf2" / "standard.uf2"),
+            str(INPUTS["uf2"] / "standard.uf2"),
         ],
         capture_output=True,
         text=True,

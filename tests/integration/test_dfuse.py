@@ -3,9 +3,9 @@
 import random
 from pathlib import Path
 
-from tests.conftest import FIXTURES, chunks, run_unblob
+from tests.conftest import INPUTS, chunks, run_unblob
 
-FIXTURE = FIXTURES / "dfuse" / "standard.dfu"
+FIXTURE = INPUTS["dfuse"] / "standard.dfu"
 
 
 def test_tc_dfu_01_chunk_is_prefix_to_suffix(tmp_path: Path):

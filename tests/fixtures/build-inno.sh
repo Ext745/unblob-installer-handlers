@@ -46,7 +46,8 @@ docker run --rm --network none -u "$(id -u):$(id -g)" -v "$WORK":/w \
     echo "$f: payload extracted identical ($(innoextract -i "$f" 2>&1 | grep -o "setup data version [0-9.]*"))"
   done'
 
-mkdir -p "$HERE/inno"
-rm -f "$HERE"/inno/standard-*.exe
-cp "$WORK"/out/standard-*.exe "$HERE/inno/"
-(cd "$HERE" && sha256sum inno/*.exe && ls -l inno/*.exe | awk '{print $5, $9}')
+mkdir -p "$HERE/../integration/executable/inno/__input__"
+OUT="$HERE/../integration/executable/inno/__input__"
+rm -f "$OUT"/standard-*.exe
+cp "$WORK"/out/standard-*.exe "$OUT/"
+(cd "$OUT" && sha256sum *.exe && ls -l *.exe | awk '{print $5, $9}')

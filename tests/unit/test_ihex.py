@@ -8,9 +8,9 @@ import pytest
 from unblob.models import ExtractError
 from unblob.report import ErrorReport
 
-from tests.conftest import FIXTURES
+from tests.conftest import INPUTS
 
-FIXTURE = (FIXTURES / "ihex" / "standard.hex").read_bytes()
+FIXTURE = (INPUTS["ihex"] / "standard.hex").read_bytes()
 
 
 def ihex() -> ModuleType:

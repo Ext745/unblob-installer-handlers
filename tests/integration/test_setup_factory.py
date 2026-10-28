@@ -8,13 +8,13 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import FIXTURES, chunks, run_unblob
+from tests.conftest import INPUTS, chunks, run_unblob
 from tests.samples import PLAIN_PE
 
 
 @pytest.mark.parametrize(
     "sample",
-    [PLAIN_PE, FIXTURES / "inno" / "standard-5.6.1-unicode.exe"],
+    [PLAIN_PE, INPUTS["inno"] / "standard-5.6.1-unicode.exe"],
     ids=["plain-pe", "inno"],
 )
 def test_tc_sf_02_pe_without_setup_factory_data_not_claimed(

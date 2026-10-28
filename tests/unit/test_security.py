@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from unblob.file_utils import File, InvalidInputFormat
 
-from tests.conftest import FIXTURES
+from tests.conftest import INPUTS
 from tests.samples import handler
 
 UF2_MAGICS = (0x0A324655, 0x9E5D5157, 0x0AB16F30)
@@ -38,8 +38,8 @@ CASES = {
     # A small gap, so a filler that pads only short gaps is still caught.
     "uf2-32kib": ("uf2", uf2_block(0x1000, 0, 2) + uf2_block(0x9000, 1, 2)),
     "ihex-32kib": ("ihex", hex_at(0x08001000, 0x08009000)),
-    "dfuse": ("dfuse", (FIXTURES / "dfuse" / "standard.dfu").read_bytes()),
-    "mcuboot": ("mcuboot", (FIXTURES / "mcuboot" / "standard.bin").read_bytes()),
+    "dfuse": ("dfuse", (INPUTS["dfuse"] / "standard.dfu").read_bytes()),
+    "mcuboot": ("mcuboot", (INPUTS["mcuboot"] / "standard.bin").read_bytes()),
 }
 
 

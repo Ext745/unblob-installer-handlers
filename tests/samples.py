@@ -10,16 +10,15 @@ from pathlib import Path
 from unblob.models import Handler
 
 import unblob_installers
-
-FIXTURES = Path(__file__).parent / "fixtures"
+from tests.conftest import INPUTS
 
 COMMITTED = {
-    "uf2": FIXTURES / "uf2" / "standard.uf2",
-    "ihex": FIXTURES / "ihex" / "standard.hex",
-    "dfuse": FIXTURES / "dfuse" / "standard.dfu",
-    "mcuboot": FIXTURES / "mcuboot" / "standard.bin",
-    "inno": FIXTURES / "inno" / "standard-5.6.1-unicode.exe",
-    "wix_burn": FIXTURES / "burn" / "standard.exe",
+    "uf2": INPUTS["uf2"] / "standard.uf2",
+    "ihex": INPUTS["ihex"] / "standard.hex",
+    "dfuse": INPUTS["dfuse"] / "standard.dfu",
+    "mcuboot": INPUTS["mcuboot"] / "standard.bin",
+    "inno": INPUTS["inno"] / "standard-5.6.1-unicode.exe",
+    "wix_burn": INPUTS["burn"] / "standard.exe",
 }
 REAL = {  # relative to the real-file store
     "installshield": Path("installshield/baldurs-gate-patch-1.1.4315/data1.cab"),

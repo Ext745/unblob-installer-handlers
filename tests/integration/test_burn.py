@@ -7,7 +7,7 @@ from unblob.report import ChunkReport
 
 from tests.conftest import (
     BURN_NS,
-    FIXTURES,
+    INPUTS,
     burn_container_file,
     burn_hash,
     burn_manifest,
@@ -15,7 +15,7 @@ from tests.conftest import (
     run_unblob,
 )
 
-FIXTURE = FIXTURES / "burn" / "standard.exe"
+FIXTURE = INPUTS["burn"] / "standard.exe"
 
 
 def test_tc_burn_01_fixture_is_one_wix_burn_chunk(tmp_path: Path):
