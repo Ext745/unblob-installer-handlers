@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from unblob.plugins import UnblobPluginManager
+from unblob.report import ChunkReport
 
 from tests.conftest import chunks, run_unblob, tree
 from tests.uf2image import payload_image
@@ -66,12 +67,18 @@ def test_jrn_01_3_region_equals_build_bin(realfiles: Path, tmp_path: Path):
 
 def test_jrn_02_1_vendor_updater_is_one_inno_chunk(realfiles: Path, tmp_path: Path):
     exe = realfiles / NAVX
+    result = run_unblob(exe, tmp_path, max_depth=1, pr1255="plugin")
+    # At the updater's own level: our inno chunk alone, no pe chunk from #1255.
     found = [
         c
-        for c in chunks(run_unblob(exe, tmp_path, max_depth=1))
-        if c.handler_name == "inno"
+        for t in result.results
+        if t.task.path == exe
+        for c in t.reports
+        if isinstance(c, ChunkReport)
     ]
-    assert [(c.start_offset, c.end_offset) for c in found] == [(0, exe.stat().st_size)]
+    assert [(c.handler_name, c.start_offset, c.end_offset) for c in found] == [
+        ("inno", 0, exe.stat().st_size)
+    ]
 
 
 def test_jrn_02_2_installer_files_extracted(realfiles: Path, tmp_path: Path):

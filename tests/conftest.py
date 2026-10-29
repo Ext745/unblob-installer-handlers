@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from unblob.handlers import BUILTIN_DIR_HANDLERS, BUILTIN_HANDLERS
 from unblob.models import ProcessResult
+from unblob.plugins import UnblobPluginManager
 from unblob.processing import DEFAULT_DEPTH, ExtractionConfig, process_file
 from unblob.report import ChunkReport
 
@@ -51,14 +52,53 @@ def payload() -> bytes:
     return (FIXTURES / "payload.bin").read_bytes()
 
 
+# Upstream PR #1255's PE handler as a plugin (capability pr1255, FSD §15, D-1).
+PR1255 = Path("/opt/pr1255")
+
+
+def require_pr1255() -> None:
+    if not (PR1255 / "unblob_pr1255" / "__init__.py").is_file():
+        pytest.skip("precondition unmet: PR #1255 plugin (pr1255) not installed")
+
+
+def pr1255_handlers() -> list:
+    """PR #1255's handlers alone; skips the test where the plugin is absent."""
+    require_pr1255()
+    manager = UnblobPluginManager()
+    manager.import_path(PR1255)
+    return manager.load_handlers_from_plugins()
+
+
+def handlers_with_pr1255(order: str) -> tuple:
+    """Give unblob's handler list with #1255 beside this package's handlers.
+
+    "plugin": as `unblob -P /opt/pr1255` loads both plugins today.
+    "merged": #1255 among unblob's own handlers, which always come before a
+    plugin's — the order once the PR is merged.
+    """
+    if order == "merged":
+        return (*BUILTIN_HANDLERS, *pr1255_handlers(), *unblob_installers.HANDLERS)
+    assert order == "plugin", order
+    require_pr1255()
+    manager = UnblobPluginManager()
+    manager.import_plugins(PR1255)
+    return (*BUILTIN_HANDLERS, *manager.load_handlers_from_plugins())
+
+
 def run_unblob(
-    path: Path, extract_root: Path, max_depth: int = DEFAULT_DEPTH
+    path: Path,
+    extract_root: Path,
+    max_depth: int = DEFAULT_DEPTH,
+    pr1255: str | None = None,
 ) -> ProcessResult:
+    """Run unblob with this package's handlers; pr1255 adds #1255 in that order."""
     config = ExtractionConfig(
         extract_root=extract_root,
         randomness_depth=0,
         keep_extracted_chunks=True,
-        handlers=(*BUILTIN_HANDLERS, *unblob_installers.HANDLERS),
+        handlers=handlers_with_pr1255(pr1255)
+        if pr1255
+        else (*BUILTIN_HANDLERS, *unblob_installers.HANDLERS),
         dir_handlers=(*BUILTIN_DIR_HANDLERS, *unblob_installers.DIR_HANDLERS),
         max_depth=max_depth,
     )

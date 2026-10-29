@@ -4,8 +4,6 @@ Runs only where the PR's handler is installed as a plugin (the devcontainer:
 /opt/pr1255, FSD §15, D-1).
 """
 
-import importlib.util
-import sys
 from pathlib import Path
 
 import pytest
@@ -13,7 +11,7 @@ from unblob.handlers import BUILTIN_HANDLERS
 from unblob.processing import ExtractionConfig, process_file
 from unblob.report import ChunkReport
 
-PR1255 = Path("/opt/pr1255/unblob_pr1255/__init__.py")
+from tests.conftest import pr1255_handlers
 
 CASES = [
     # (installer in the store, a firmware file inside it)
@@ -24,20 +22,6 @@ CASES = [
     ("nsis/rpiboot_setup.exe", "msd/bootcode4.bin"),
     ("nsis/Flip Installer - 3.4.7.112.exe", "demo/Release/appli1.hex"),
 ]
-
-
-def pr1255_handlers():
-    if not PR1255.is_file():
-        pytest.skip("precondition unmet: PR #1255 plugin (pr1255) not installed")
-    spec = importlib.util.spec_from_file_location(
-        "unblob_pr1255", PR1255, submodule_search_locations=[str(PR1255.parent)]
-    )
-    assert spec
-    assert spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["unblob_pr1255"] = module
-    spec.loader.exec_module(module)
-    return module.unblob_register_handlers()
 
 
 @pytest.mark.parametrize(

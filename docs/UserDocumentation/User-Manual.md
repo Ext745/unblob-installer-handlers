@@ -128,6 +128,10 @@ does not verify it (FSD §18).
   than one dependency module or file (FR-SF-06), a script over 64 MiB
   (NFR-SEC-04) or an LZMA dictionary over 64 MiB (NFR-SEC-05) are declined,
   not unpacked.
+- Inno Setup, Setup Factory, WiX/Burn with #1255: loaded as a plugin
+  (`unblob -P`), #1255 leaves these installers to this package. In an unblob
+  that has #1255 merged, its generic `pe` handler is asked first and claims
+  the whole installer as a plain PE (FR-PE-03, FSD §4.1).
 - MCUboot: big-endian images are not recognised; encrypted payloads are not
   decrypted.
 - DfuSe: suffix-only DFU 1.1 files (no `DfuSe` prefix) are not recognised.

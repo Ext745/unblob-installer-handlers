@@ -19,7 +19,8 @@ FIXTURE = INPUTS["burn"] / "standard.exe"
 
 
 def test_tc_burn_01_fixture_is_one_wix_burn_chunk(tmp_path: Path):
-    found = chunks(run_unblob(FIXTURE, tmp_path, max_depth=1))
+    # Must NOT: claimed only by #1255's generic pe handler.
+    found = chunks(run_unblob(FIXTURE, tmp_path, max_depth=1, pr1255="plugin"))
     assert [(c.handler_name, c.start_offset, c.end_offset) for c in found] == [
         ("wix_burn", 0, FIXTURE.stat().st_size)
     ]

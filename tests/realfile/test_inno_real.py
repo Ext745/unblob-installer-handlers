@@ -29,8 +29,11 @@ def test_tc_pe_01_signed_installer_chunk_includes_certificate(
     realfiles: Path, tmp_path: Path, installer: Path
 ):
     source = realfiles / installer
-    reports = top_level(run_unblob(source, tmp_path, max_depth=1), source)
-    # Must NOT: the certificate table reported as an unknown chunk.
+    reports = top_level(
+        run_unblob(source, tmp_path, max_depth=1, pr1255="plugin"), source
+    )
+    # Must NOT: the certificate table reported as an unknown chunk, or a pe
+    # chunk from #1255 beside or instead of ours.
     assert [
         (
             type(r).__name__,
@@ -73,7 +76,9 @@ def test_tc_pe_04_signed_installer_with_appended_bytes(realfiles: Path, tmp_path
     source = tmp_path / "padded.exe"
     source.write_bytes(installer + rng.randbytes(4096))
 
-    reports = top_level(run_unblob(source, tmp_path / "x", max_depth=1), source)
+    reports = top_level(
+        run_unblob(source, tmp_path / "x", max_depth=1, pr1255="plugin"), source
+    )
 
     # unblob lists unknown chunks first; compare in file order.
     assert sorted(

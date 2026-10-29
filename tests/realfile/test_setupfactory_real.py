@@ -15,7 +15,20 @@ SF10 = Path("setupfactory/setup-factory-10.4.0.0.exe")
 
 def test_tc_sf_01_sf10_is_one_setup_factory_chunk(realfiles: Path, tmp_path: Path):
     source = realfiles / SF10
-    found = chunks(run_unblob(source, tmp_path, max_depth=1))
+    # Must NOT: claimed only by #1255's generic pe handler.
+    found = chunks(run_unblob(source, tmp_path, max_depth=1, pr1255="plugin"))
+    assert [(c.handler_name, c.start_offset, c.end_offset) for c in found] == [
+        ("setup_factory", 0, source.stat().st_size)
+    ]
+
+
+@pytest.mark.xfail(
+    strict=True, reason="FSD §4.1: #1255's pe comes first once merged, claims the PE"
+)
+def test_tc_pe_06_merged_pr1255_leaves_sf10_to_us(realfiles: Path, tmp_path: Path):
+    # The TC-SF-01 run in the order unblob uses once #1255 is merged.
+    source = realfiles / SF10
+    found = chunks(run_unblob(source, tmp_path, max_depth=1, pr1255="merged"))
     assert [(c.handler_name, c.start_offset, c.end_offset) for c in found] == [
         ("setup_factory", 0, source.stat().st_size)
     ]
