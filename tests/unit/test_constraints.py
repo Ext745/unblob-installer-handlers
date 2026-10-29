@@ -103,7 +103,15 @@ def test_tc_con_06_mit_licence_and_no_gpl_source():
 def test_tc_con_07_every_handler_merged_or_in_review():
     rows = progress_rows()
     assert rows
-    missing = [name for name, cells in rows.items() if not (cells[2] or cells[3])]
+    # A PR cell opens with the PR's URL; a merged cell is the unblob version.
+    # Anything else ("not opened: ...", a bare "#1687") is not a link.
+    pr = re.compile(r"https://github\.com/onekey-sec/unblob/pull/\d+\b")
+    merged = re.compile(r"\d+\.\d+(\.\d+)?")
+    missing = [
+        name
+        for name, cells in rows.items()
+        if not (pr.match(cells[2]) or merged.fullmatch(cells[3]))
+    ]
     assert missing == []
 
 
