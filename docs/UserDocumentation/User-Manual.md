@@ -56,8 +56,7 @@ pip install .
 pip install git+https://github.com/Ext745/unblob-installer-handlers
 ```
 
-The repository is private: either way needs a GitHub account with access to
-it. To build a wheel to install elsewhere, run `pip install build==1.3.0` and
+To build a wheel to install elsewhere, run `pip install build==1.3.0` and
 then `python -m build`, which writes the wheel to `dist/`. The package
 reports version `0.0.0` until the first release.
 

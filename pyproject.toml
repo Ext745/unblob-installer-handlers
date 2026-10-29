@@ -6,10 +6,32 @@ build-backend = "hatchling.build"
 name = "unblob-installer-handlers"
 dynamic = ["version"]
 description = "unblob handlers for Windows installers and MCU firmware containers"
-readme = "PLAN.md"
+readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = ["unblob==26.6.4"]
+authors = [{ name = "Ext745" }]
+keywords = ["unblob", "firmware", "extraction", "installer", "uf2", "intel-hex", "dfuse", "mcuboot", "installshield", "inno-setup", "setup-factory", "wix-burn"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Security",
+  "Topic :: System :: Archiving",
+]
+
+[project.urls]
+Homepage = "https://github.com/Ext745/unblob-installer-handlers"
+Documentation = "https://github.com/Ext745/unblob-installer-handlers/blob/main/docs/UserDocumentation/User-Manual.md"
+Issues = "https://github.com/Ext745/unblob-installer-handlers/issues"
+Source = "https://github.com/Ext745/unblob-installer-handlers"
 
 # FSD C-03: unblob discovers the plugin through this group.
 [project.entry-points.unblob_v1]
