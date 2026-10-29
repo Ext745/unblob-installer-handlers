@@ -42,13 +42,31 @@ installers are not unpacked at all.
 
 ## 2. Installation
 
-The package is not on PyPI. Install it into the same environment as unblob:
+The package is not on PyPI, and no release has been published yet: there is
+no release wheel to download. Install it from the source, into the same
+environment as unblob:
 
 ```sh
-# from a release's wheel
-pip install unblob_installer_handlers-<version>-py3-none-any.whl
-# or from a checkout of this repository
+# from a checkout of this repository
+git clone https://github.com/Ext745/unblob-installer-handlers
+cd unblob-installer-handlers
 pip install .
+
+# or straight from GitHub, without a checkout
+pip install git+https://github.com/Ext745/unblob-installer-handlers
+```
+
+The repository is private: either way needs a GitHub account with access to
+it. To build a wheel to install elsewhere, run `pip install build==1.3.0` and
+then `python -m build`, which writes the wheel to `dist/`. The package
+reports version `0.0.0` until the first release.
+
+When a `vX.Y.Z` tag is pushed, `.github/workflows/release.yml` builds the
+wheel, runs the journey on it, and only if that passes publishes a GitHub
+release with the wheel attached. Install a release's wheel with:
+
+```sh
+pip install unblob_installer_handlers-<version>-py3-none-any.whl
 ```
 
 unblob discovers the handlers through the `unblob_v1` entry point (C-03); no
@@ -67,6 +85,11 @@ Without installing, point unblob at the package directory instead (FR-PKG-02):
 ```sh
 unblob -P src/unblob_installers <file>
 ```
+
+To use the NSIS handler of unblob PR #1255 alongside this package, load it
+as a plugin too: `unblob -P /opt/pr1255 <file>`, where `/opt/pr1255` holds
+the PR's `pe.py` as `.devcontainer/Dockerfile` installs it. Load it this way,
+as a plugin: see §5 on what changes once #1255 is merged into unblob.
 
 ## 3. Unpacking a file
 
