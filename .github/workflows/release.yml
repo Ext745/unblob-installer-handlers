@@ -69,7 +69,7 @@ jobs:
           suite = root if root.tag == "testsuite" else root[0]
           counts = {k: int(suite.get(k, 0)) for k in ("tests", "failures", "errors", "skipped")}
           print(counts)
-          assert counts["tests"] >= 6 and counts["failures"] + counts["errors"] + counts["skipped"] == 0
+          assert counts["tests"] >= 7 and counts["failures"] + counts["errors"] + counts["skipped"] == 0
           PY
 
   release:

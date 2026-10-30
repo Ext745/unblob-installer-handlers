@@ -1,9 +1,12 @@
 """The standard run (testing/test-plan.yaml JRN-*), one test per step.
 
 JRN-01: a board UF2 through the plugin. JRN-02: a vendor Inno Setup updater
-(FSD Phase 3; needs PR #1255's PE handler and the Inno handler).
+(FSD Phase 3; needs PR #1255's PE handler and the Inno handler). JRN-02.4 runs
+the `unblob` command itself, as a user does, with its sandbox on (FR-COM-06):
+on a release, that is the wheel's own command.
 """
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -12,6 +15,7 @@ import pytest
 from unblob.plugins import UnblobPluginManager
 from unblob.report import ChunkReport
 
+from tests.cli_sandbox import UNBLOB, errors, landlock_enforced
 from tests.conftest import chunks, run_unblob, tree
 from tests.uf2image import payload_image
 
@@ -104,3 +108,36 @@ def test_jrn_02_3_firmware_payload_unpacked_further(realfiles: Path, tmp_path: P
     run_unblob(realfiles / NAVX, tmp_path, max_depth=2)
     hexfile = next(tmp_path.rglob("navx2-mxp_4.0.447.hex"))
     assert list(hexfile.parent.rglob("navx2-mxp_4.0.447.hex_extract/*.bin"))
+
+
+def test_jrn_02_4_unblob_command_extracts_the_updater(realfiles: Path, tmp_path: Path):
+    innoextract = shutil.which("innoextract")
+    if innoextract is None:
+        pytest.skip("precondition unmet: innoextract (extractors) not installed")
+    if not landlock_enforced(tmp_path):
+        pytest.skip("precondition unmet: the kernel does not enforce Landlock")
+    oracle = tmp_path / "oracle"
+    subprocess.run(
+        [innoextract, "-e", "-s", "-d", str(oracle), str(realfiles / NAVX)],
+        check=True,
+    )
+    report = tmp_path / "report.json"
+    subprocess.run(
+        [
+            str(UNBLOB),
+            "-d", "1",
+            "-n", "0",
+            "-e", str(tmp_path / "x"),
+            "--report", str(report),
+            "--log", str(tmp_path / "unblob.log"),
+            str(realfiles / NAVX),
+        ],
+        env={k: v for k, v in os.environ.items() if k != "TMPDIR"},
+        capture_output=True,
+        check=False,
+    )  # fmt: skip
+
+    # JRN-02.2's result, through the command a user types.
+    assert errors(report) == []
+    (out,) = [p for p in (tmp_path / "x").iterdir() if p.is_dir()]
+    assert tree(out) == tree(oracle)
