@@ -43,8 +43,9 @@ installers are not unpacked at all.
 ## 2. Installation
 
 The package is not on PyPI. Each release on GitHub
-(https://github.com/Ext745/unblob-installer-handlers/releases), the first
-being `v0.1.0`, carries the wheel and the sdist. Install a release's wheel,
+(https://github.com/Ext745/unblob-installer-handlers/releases) carries the
+wheel and the sdist; use 0.1.1 or later (0.1.0 cannot extract Inno Setup or
+InstallShield through the `unblob` command, §6). Install a release's wheel,
 or install from the source, into the same environment as unblob:
 
 ```sh
@@ -169,6 +170,7 @@ does not verify it (FSD §18).
 | Setup Factory 7.0.1/7.0.3, 8.1 or 9.2 installer fails in `sfextract` | Upstream sfextract 0.0.8 lacks the fixes | Install the pinned fork (§1) |
 | Handlers missing from the run; only unblob's own handlers appear | Package installed in a different environment than the `unblob` on `PATH` | `pip install` into unblob's own venv, or use `-P` (§2) |
 | UF2 or Intel HEX extraction fails naming two block or line numbers | The file writes different bytes to the same address (FR-UF2-08, FR-HEX-07) | The file is inconsistent; identical duplicate writes are accepted |
+| Inno Setup or InstallShield: `UnknownError`, "No usable temporary directory" in the report | Version 0.1.0 under the `unblob` command: its sandbox blocked the handlers' scratch files (fixed in 0.1.1, FSD FR-COM-06) | Install 0.1.1 or later |
 | An installer is unpacked only as a generic PE, or not at all | Not one of the supported installer types or versions (§5), or an NSIS installer without #1255 | Check the version; NSIS needs unblob with #1255 |
 | A lone `data1.cab` from InstallShield 6+ is not unpacked | Only sets are claimed (FR-ISC-06) | Run unblob on the directory, or on an archive of it, that holds `data1.hdr` and the `.cab` volumes |
 
