@@ -1,10 +1,12 @@
 """Extraction failure rules shared by every handler (FSD §17).
 
 A failed extraction raises ExtractError with an error report (FR-COM-03),
-and a missing external command is reported as such (FR-COM-04).
+a missing external command is reported as such (FR-COM-04), and scratch
+files stay inside the extraction directory (FR-COM-06).
 """
 
 import subprocess
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -21,6 +23,17 @@ def run_tool(command: list[str]) -> subprocess.CompletedProcess[bytes]:
         raise ExtractError(
             ExtractorDependencyNotFoundReport(dependencies=[command[0]])
         ) from None
+
+
+def scratch_dir(outdir: Path) -> tempfile.TemporaryDirectory[str]:
+    """Make a temporary directory inside outdir, removed when the block ends.
+
+    The `unblob` command runs extraction in a Landlock sandbox that allows
+    writes only beneath the extraction root; the system temp directory is
+    outside it (FR-COM-06).
+    """
+    outdir.mkdir(parents=True, exist_ok=True)
+    return tempfile.TemporaryDirectory(dir=outdir, prefix=".unblob-installers-")
 
 
 def require_whole_chunk(

@@ -10,7 +10,6 @@ and given to unshield whole, whatever its version (FR-ISC-04).
 
 import shutil
 import struct
-import tempfile
 from pathlib import Path
 
 from unblob.file_utils import InvalidInputFormat
@@ -32,7 +31,7 @@ from unblob.models import (
 )
 from unblob.report import ExtractCommandFailedReport
 
-from ._extract import run_tool
+from ._extract import run_tool, scratch_dir
 
 COMMON = struct.Struct(
     "<4sIIII"
@@ -115,7 +114,7 @@ def run_unshield(target: Path, outdir: Path) -> None:
     """
     result = None
     for options in ([], ["-O"]):
-        with tempfile.TemporaryDirectory() as tmp:
+        with scratch_dir(outdir) as tmp:
             command = ["unshield", *options, "-d", tmp, "x", str(target)]
             result = run_tool(command)
             if result.returncode == 0:
@@ -139,7 +138,7 @@ class UnshieldExtractor(Extractor):
 
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
         # unshield derives sibling volume names from "data1.cab".
-        with tempfile.TemporaryDirectory() as tmp:
+        with scratch_dir(outdir) as tmp:
             cab = Path(tmp) / "data1.cab"
             shutil.copyfile(inpath, cab)
             run_unshield(cab, outdir)
@@ -193,7 +192,7 @@ class UnshieldSetExtractor(DirectoryExtractor):
 
     def extract(self, paths: list[Path], outdir: Path) -> ExtractResult | None:
         # unshield finds the volumes by their lower-case names beside data1.
-        with tempfile.TemporaryDirectory() as tmp:
+        with scratch_dir(outdir) as tmp:
             for path in paths:
                 shutil.copyfile(path, Path(tmp) / path.name.lower())
             header = Path(tmp) / "data1.hdr"

@@ -7,7 +7,6 @@ before signing. Extraction runs innoextract.
 
 import shutil
 import struct
-import tempfile
 import zlib
 from pathlib import Path
 
@@ -26,7 +25,7 @@ from unblob.models import (
 )
 from unblob.report import ExtractCommandFailedReport
 
-from ._extract import run_tool
+from ._extract import run_tool, scratch_dir
 from ._pe import certificate_end
 
 # Offset-table IDs and the earliest Inno version using each.
@@ -82,7 +81,7 @@ class InnoExtractor(Extractor):
         return ["innoextract"]
 
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with scratch_dir(outdir) as tmp:
             setup = Path(tmp) / "setup.exe"
             shutil.copyfile(inpath, setup)
             command = ["innoextract", "-e", "-s", "-d", str(outdir), str(setup)]
