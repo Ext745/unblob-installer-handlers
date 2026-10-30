@@ -120,8 +120,8 @@ Each chunk's output goes into `<chunk>_extract/` in unblob's extraction
 directory, and unblob recurses into it.
 
 **Firmware containers write one file per contiguous address region** — no
-fill bytes, so a gap between regions is a gap between files (OD-1, still
-pending upstream confirmation). Addresses are 8 lowercase hex digits.
+fill bytes, so a gap between regions is a gap between files. Addresses are
+8 lowercase hex digits.
 
 | Format | Output |
 |---|---|

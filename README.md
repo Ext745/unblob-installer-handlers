@@ -87,7 +87,7 @@ unblob in the meantime.
 | UF2 | [#1687](https://github.com/onekey-sec/unblob/pull/1687) |
 | MCUboot | [#1688](https://github.com/onekey-sec/unblob/pull/1688) |
 | InstallShield | [#1689](https://github.com/onekey-sec/unblob/pull/1689) |
-| Intel HEX, DfuSe | waiting for the output-layout question on #1687 |
+| Intel HEX, DfuSe | not opened yet |
 | Inno Setup, Setup Factory, WiX/Burn | not opened yet |
 
 ## Documentation
