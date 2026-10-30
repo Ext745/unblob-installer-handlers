@@ -42,9 +42,10 @@ installers are not unpacked at all.
 
 ## 2. Installation
 
-The package is not on PyPI, and no release has been published yet: there is
-no release wheel to download. Install it from the source, into the same
-environment as unblob:
+The package is not on PyPI. Each release on GitHub
+(https://github.com/Ext745/unblob-installer-handlers/releases), the first
+being `v0.1.0`, carries the wheel and the sdist. Install a release's wheel,
+or install from the source, into the same environment as unblob:
 
 ```sh
 # from a checkout of this repository
@@ -57,8 +58,7 @@ pip install git+https://github.com/Ext745/unblob-installer-handlers
 ```
 
 To build a wheel to install elsewhere, run `pip install build==1.3.0` and
-then `python -m build`, which writes the wheel to `dist/`. The package
-reports version `0.0.0` until the first release.
+then `python -m build`, which writes the wheel to `dist/`.
 
 When a `vX.Y.Z` tag is pushed, `.github/workflows/release.yml` builds the
 wheel, runs the journey on it, and only if that passes publishes a GitHub
