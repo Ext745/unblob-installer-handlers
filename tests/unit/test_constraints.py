@@ -99,7 +99,9 @@ def test_tc_con_06_mit_licence_and_no_gpl_source():
     assert hits == []
 
 
-@pytest.mark.xfail(strict=True, reason="FSD Phase 4: upstream PRs not opened yet")
+@pytest.mark.xfail(
+    strict=True, reason="FSD Phase 5 (after shipment): upstream PRs not opened yet"
+)
 def test_tc_con_07_every_handler_merged_or_in_review():
     rows = progress_rows()
     assert rows

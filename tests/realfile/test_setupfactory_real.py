@@ -23,7 +23,8 @@ def test_tc_sf_01_sf10_is_one_setup_factory_chunk(realfiles: Path, tmp_path: Pat
 
 
 @pytest.mark.xfail(
-    strict=True, reason="FSD §4.1: #1255's pe comes first once merged, claims the PE"
+    strict=True,
+    reason="FSD Phase 5 (after shipment), §4.1: #1255's pe comes first once merged, claims the PE",
 )
 def test_tc_pe_06_merged_pr1255_leaves_sf10_to_us(realfiles: Path, tmp_path: Path):
     # The TC-SF-01 run in the order unblob uses once #1255 is merged.

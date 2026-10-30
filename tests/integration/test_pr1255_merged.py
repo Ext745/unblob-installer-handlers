@@ -18,7 +18,8 @@ CASES = [
 
 
 @pytest.mark.xfail(
-    strict=True, reason="FSD §4.1: #1255's pe comes first once merged, claims the PE"
+    strict=True,
+    reason="FSD Phase 5 (after shipment), §4.1: #1255's pe comes first once merged, claims the PE",
 )
 @pytest.mark.parametrize(
     "fixture, handler", CASES, ids=[f"{h}-{p.stem}" for p, h in CASES]
