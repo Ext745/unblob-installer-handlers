@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 from unblob.report import ExtractorDependencyNotFoundReport, MultiFileReport
 
+from tests.cli_sandbox import check_cli_matches_api
 from tests.common_checks import (
     check_chunk_calculation_contained,
     check_false_candidate_declined,
@@ -84,3 +85,17 @@ def test_tc_com_04_real_set_missing_tool_reported(
         if isinstance(r, ExtractorDependencyNotFoundReport)
     ]
     assert [m.dependencies for m in missing] == [["unshield"]], multi.extraction_reports
+
+
+@pytest.mark.parametrize("name", REAL)
+def test_tc_com_06_real_cli_sandbox_matches_process_file(
+    name: str, realfiles: Path, tmp_path: Path
+):
+    check_cli_matches_api(realfiles / REAL[name], tmp_path)
+
+
+def test_tc_com_06_real_set_cli_sandbox_matches_process_file(
+    realfiles: Path, tmp_path: Path
+):
+    # The tar, then the set inside it.
+    check_cli_matches_api(avigo_tar(realfiles, tmp_path), tmp_path, max_depth=2)
