@@ -7,7 +7,8 @@ cd /home/ubuntu/actions-runner
 : "${GH_RUNNER_PAT:?set GH_RUNNER_PAT in .devcontainer/.env}"
 : "${GH_REPO:?set GH_REPO in .devcontainer/.env}"
 while true; do
-    token=$(curl -fsS -X POST -H "Authorization: Bearer $GH_RUNNER_PAT" \
+    token=$(  # scrub:allow command substitution, no value here
+        curl -fsS -X POST -H "Authorization: Bearer $GH_RUNNER_PAT" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/$GH_REPO/actions/runners/registration-token" | jq -r .token)
     if [ -z "$token" ] || [ "$token" = null ]; then

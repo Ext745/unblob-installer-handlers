@@ -58,7 +58,7 @@ freely (Inno Setup licence); the payload is ours (MIT).
 | `executable/inno/__input__/standard-6.1.2.exe` | jrsoftware/issrc release is-6_1_2 (`a3ce1c40…35e7`) | 6.1.0 | same |
 | `executable/inno/__input__/standard-6.4.3.exe` | is-6_4_3 (`f3c42116…723b`) | 6.4.3 | same |
 | `executable/inno/__input__/standard-6.7.3.exe` | is-6_7_3 (`9c73c3ba…b732`) | 6.7.0 | same |
-| `executable/inno/__input__/standard-7.1.0.exe` | is-7_1_0, x86 (`f9671174…4f60`) | 7.0.0.3 | same |
+| `executable/inno/__input__/standard-7.1.0.exe` | is-7_1_0, x86 (`f9671174…4f60`) | 7.0.0.3 | same | <!-- scrub:allow version number -->
 
 **Not byte-reproducible.** Two builds differ in about 21 bytes inside the setup
 header (a build-time value and its checksum); size and extracted contents are
