@@ -25,5 +25,5 @@ A host-side plugin, so "real" here means real files on the project's runner. *Ba
 2. Before going public: review history with `make prepublish`.
 
 ## Session log
-- 2026-11-06: repo kit retrofit: added AGENTS.md, Makefile, tools, hooks, hygiene CI, GOAL, STATUS, TESTING, CHANGELOG, decisions. By: agent: Claude Opus 5.5 via Claude Code
+- 2026-11-06: repo kit retrofit: added AGENTS.md, Makefile, tools, hooks, hygiene CI, GOAL, STATUS, TESTING, CHANGELOG, decisions. `tools/` is excluded from ruff and pyright, and added to TC-CON-05's allowed differences; lint rules are unchanged. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-10-30: v0.1.1 shipped, from `git log`. By: human + agent via Claude Code (from commit trailers)
