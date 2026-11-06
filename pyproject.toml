@@ -56,7 +56,7 @@ markers = [
 # (onekey-sec/unblob@26.6.4 pyproject.toml), with first-party set to this package.
 [tool.ruff]
 target-version = "py310"
-extend-exclude = [".claude"]   # vendored harness skills, not this package
+extend-exclude = [".claude", "tools"]   # vendored harness skills and repo-kit tools, not this package
 
 [tool.ruff.lint]
 select = [
@@ -94,5 +94,5 @@ parametrize-names-type = "csv"
 "attr".msg = "Use `attrs` (with an 's') instead"
 
 [tool.pyright]
-exclude = [".venv", "build", ".claude", ".devcontainer"]   # container wiring, not package code
+exclude = [".venv", "build", ".claude", ".devcontainer", "tools"]   # container wiring, not package code
 typeCheckingMode = "standard"

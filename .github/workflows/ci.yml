@@ -1,7 +1,7 @@
 name: lint + unit tests
 
-# Every job runs on the project's own runner (.devcontainer); there are no
-# hosted-runner minutes for this private repo. This gate covers the unit tier
+# Every lint and test job runs on the project's own runner (.devcontainer).
+# Only hygiene.yml runs hosted, for scans (docs/decisions/0004-hosted-hygiene-ci.md). This gate covers the unit tier
 # only: integration fixtures and real-file tests join it as /build adds them.
 
 on:
