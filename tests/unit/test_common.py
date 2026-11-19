@@ -63,7 +63,8 @@ def test_tc_com_03_set_tool_exit_nonzero_fails_extraction(
     volumes = []
     for n in (1, 2):
         volume = tmp_path / f"data{n}.cab"
-        volume.write_bytes(b"input the stub never reads")
+        # ISc(: a complete set as far as FR-ISC-09 checks, so the tool runs.
+        volume.write_bytes(b"ISc(input the stub never reads")
         volumes.append(volume)
     outdir = tmp_path / "out"
     outdir.mkdir()
