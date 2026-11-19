@@ -44,7 +44,8 @@ FD_FLAGS, FD_SIZES, FD_DATA_OFFSET = 8, 10, 0x26  # within a v5 file descriptor
 # unshield 1.6.2 (libunshield.c, unshield_get_cab_descriptor) reads 0x3E bytes
 # of fields and 71 file-group and 71 component offsets from the descriptor,
 # whatever size the header declares (FR-ISC-07). The file table is not bounded
-# by the declared size: real cabinets place it beyond.
+# by the declared size: real cabinets place it beyond. Both defects (FR-ISC-07,
+# FR-ISC-09) were found by BookCatKid/unblob#1 (MIT), which uses the same bound.
 MIN_DESCRIPTOR_SIZE = 0x3E + 2 * 71 * 4  # 0x276
 
 

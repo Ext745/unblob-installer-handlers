@@ -44,8 +44,9 @@ installers are not unpacked at all.
 
 The package is not on PyPI. Each release on GitHub
 (https://github.com/Ext745/unblob-installer-handlers/releases) carries the
-wheel and the sdist; use 0.1.1 or later (0.1.0 cannot extract Inno Setup or
-InstallShield through the `unblob` command, §6). Install a release's wheel,
+wheel and the sdist; use 0.1.2 or later (0.1.0 cannot extract Inno Setup or
+InstallShield through the `unblob` command; 0.1.1 and earlier claim some
+malformed InstallShield cabinets and drop volumes after a gap in a set, §6). Install a release's wheel,
 or install from the source, into the same environment as unblob:
 
 ```sh
@@ -145,7 +146,9 @@ does not verify it (FSD §18).
 
 - InstallShield: a version 6+ `data1.cab` or `data1.hdr` on its own is not
   claimed (FR-ISC-06); unblob has to see the directory that holds the set,
-  as it does when the set comes out of an installer or archive. InstallShield
+  as it does when the set comes out of an installer or archive. A set with a
+  missing volume (a gap in the `dataN.cab` numbers) or a `dataN.cab` without
+  the `ISc(` signature is reported, not extracted (FR-ISC-09). InstallShield
   3 (`.Z`, `_sys1.cab`) is out of scope.
 - Setup Factory: installers declaring more than 1000 files (FR-SF-07), more
   than one dependency module or file (FR-SF-06), a script over 64 MiB
@@ -173,6 +176,7 @@ does not verify it (FSD §18).
 | Inno Setup or InstallShield: `UnknownError`, "No usable temporary directory" in the report | Version 0.1.0 under the `unblob` command: its sandbox blocked the handlers' scratch files (fixed in 0.1.1, FSD FR-COM-06) | Install 0.1.1 or later |
 | An installer is unpacked only as a generic PE, or not at all | Not one of the supported installer types or versions (§5), or an NSIS installer without #1255 | Check the version; NSIS needs unblob with #1255 |
 | A lone `data1.cab` from InstallShield 6+ is not unpacked | Only sets are claimed (FR-ISC-06) | Run unblob on the directory, or on an archive of it, that holds `data1.hdr` and the `.cab` volumes |
+| InstallShield set: `ExtractionProblem` "InstallShield set has no dataN.cab volume" or "… lacks the ISc( signature", no files | A volume of the set is missing or is not a cabinet (FR-ISC-09); 0.1.1 and earlier extracted the volumes before the gap and dropped the rest without a report | Supply every volume `data1.cab` … `dataN.cab`, then run again |
 
 ---
 
