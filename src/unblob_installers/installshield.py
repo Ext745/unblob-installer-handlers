@@ -29,7 +29,7 @@ from unblob.models import (
     Reference,
     ValidChunk,
 )
-from unblob.report import ExtractCommandFailedReport
+from unblob.report import ExtractCommandFailedReport, ExtractionProblem, Report
 
 from ._extract import run_tool, scratch_dir
 
@@ -41,6 +41,11 @@ VOLUME_V5 = struct.Struct(
 )  # data offset, unknown, first/last index, first/last file
 FILE_INVALID = 0x8
 FD_FLAGS, FD_SIZES, FD_DATA_OFFSET = 8, 10, 0x26  # within a v5 file descriptor
+# unshield 1.6.2 (libunshield.c, unshield_get_cab_descriptor) reads 0x3E bytes
+# of fields and 71 file-group and 71 component offsets from the descriptor,
+# whatever size the header declares (FR-ISC-07). The file table is not bounded
+# by the declared size: real cabinets place it beyond.
+MIN_DESCRIPTOR_SIZE = 0x3E + 2 * 71 * 4  # 0x276
 
 
 def _unpack(fmt: str | struct.Struct, buf, offset: int) -> tuple:
@@ -93,6 +98,10 @@ def cabinet_end(buf, start: int) -> int:
         raise InvalidInputFormat("only the version 5 cabinet layout is handled")
     if desc_size == 0:
         raise InvalidInputFormat("continuation volume without a descriptor")
+    if desc_offset < COMMON.size + VOLUME_V5.size:
+        raise InvalidInputFormat("cabinet descriptor overlaps the volume header")
+    if desc_size < MIN_DESCRIPTOR_SIZE:
+        raise InvalidInputFormat("cabinet descriptor shorter than unshield reads")
     end = start + desc_offset + desc_size
     volume = _unpack(VOLUME_V5, buf, start + COMMON.size)
     last_offset, last_compressed = volume[7], volume[9]
@@ -186,11 +195,36 @@ def _is_cabinet(path: Path) -> bool:
         return f.read(4) == b"ISc("
 
 
+def _incomplete_volumes(paths: list[Path]) -> list[Report]:
+    """Report each missing or invalid dataN.cab of the set (FR-ISC-09)."""
+    volumes = {n: p for p in paths if (n := _volume_number(p)) is not None}
+    problems: list[Report] = []
+    for n in range(1, max(volumes, default=0) + 1):
+        volume = volumes.get(n)
+        if volume is None:
+            problem = f"InstallShield set has no data{n}.cab volume"
+        elif not _is_cabinet(volume):
+            problem = f"InstallShield set volume {volume.name} lacks the ISc( signature"
+        else:
+            continue
+        problems.append(
+            ExtractionProblem(
+                problem=problem,
+                resolution="Set not extracted.",
+                path=str(volume or f"data{n}.cab"),
+            )
+        )
+    return problems
+
+
 class UnshieldSetExtractor(DirectoryExtractor):
     def get_dependencies(self) -> list[str]:
         return ["unshield"]
 
     def extract(self, paths: list[Path], outdir: Path) -> ExtractResult | None:
+        problems = _incomplete_volumes(paths)
+        if problems:  # FR-ISC-09: reported, nothing extracted
+            return ExtractResult(reports=problems)
         # unshield finds the volumes by their lower-case names beside data1.
         with scratch_dir(outdir) as tmp:
             for path in paths:
@@ -212,7 +246,10 @@ class InstallShieldSetHandler(DirectoryHandler):
         references=[
             Reference(title="unshield", url="https://github.com/twogood/unshield"),
         ],
-        limitations=["Volumes must be named dataN.cab and numbered without gaps"],
+        limitations=[
+            "Volumes must be named dataN.cab",
+            "A set with a missing volume or a volume without the ISc( signature is reported, not extracted",
+        ],
     )
 
     def calculate_multifile(self, file: Path) -> MultiFile | None:
@@ -222,12 +259,12 @@ class InstallShieldSetHandler(DirectoryHandler):
             return None  # the set starts at data1.hdr
         if not _is_cabinet(file):
             return None
-        volumes = []
-        for n in range(1, len(siblings) + 1):
-            volume = siblings.get(f"data{n}.cab")
-            if volume is None or not _is_cabinet(volume):
-                break
-            volumes.append(volume)
+        # FR-ISC-08: every dataN.cab, after a gap or without ISc( too; the
+        # extractor reports those instead of extracting (FR-ISC-09).
+        volumes = sorted(
+            (p for p in siblings.values() if _volume_number(p) is not None),
+            key=lambda p: _volume_number(p) or 0,
+        )
         if header is None and len(volumes) < 2:
             return None
         paths = ([header] if header is not None else []) + volumes

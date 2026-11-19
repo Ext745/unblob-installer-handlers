@@ -151,3 +151,11 @@ def test_tc_isc_05_v6_set_extracted_from_hdr_and_cab(realfiles: Path, tmp_path: 
 def test_tc_isc_07_lone_v6_file_not_claimed(realfiles: Path, tmp_path: Path, name: str):
     result = run_unblob(realfiles / REALTEK / name, tmp_path, max_depth=1)
     assert isc_chunks(result) == []
+
+
+def test_tc_isc_11_real_v5_cabinet_still_claimed_whole(realfiles: Path, tmp_path: Path):
+    # FR-ISC-07 must not reject a real cabinet: Baldur's Gate's file table and
+    # file descriptors lie past its declared descriptor size.
+    cab = realfiles / CAB
+    found = isc_chunks(run_unblob(cab, tmp_path, max_depth=1))
+    assert [(c.start_offset, c.end_offset) for c in found] == [(0, cab.stat().st_size)]
