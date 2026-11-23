@@ -31,7 +31,8 @@ is no separate tool to learn.
 | `sfextract` | Setup Factory | the fork `Ext745/sfextract` at `33399fae` (0.0.8 plus Setup Factory 10, SF 7.0.1/7.0.3, SF8 dependency-module and SF 9.2 fixes; upstream PR CybercentreCanada/sfextract#12) |
 | `7z` | unblob's own CAB handler, when it recurses into Burn containers | as unblob's dependency list installs it |
 
-UF2, Intel HEX, DfuSe, MCUboot and WiX/Burn need no external tool.
+UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA, GBL, `.cyacd`/`.cyacd2`,
+single-file InstallShield packages and WiX/Burn need no external tool.
 `.devcontainer/Dockerfile` builds all of the above and is the reference for
 how to install them.
 
@@ -110,6 +111,7 @@ unblob -e out/ --report report.json updater.exe
 | `mcuboot` | MCUboot images (little-endian), header to end of the TLV area |
 | `installshield` | a self-contained version 5 `data1.cab` |
 | `installshield_set` | a directory holding a cabinet set (`data1.hdr` and/or `data1.cab` … `dataN.cab`), version 5 or 6 and later |
+| `installshield_setup` | the `InstallShield\0` or `ISSetupStream\0` package after a single-file `setup.exe` stub, from its signature to the end of its last member |
 | `inno` | a PE carrying Inno Setup 5.x–7.1 setup data |
 | `setup_factory` | a PE carrying a Setup Factory 7–10 overlay |
 | `wix_burn` | a PE with a `.wixburn` section |
@@ -139,6 +141,7 @@ fill bytes, so a gap between regions is a gap between files. Addresses are
 | DfuSe | `target<alt>_<name>/0x<address>.bin` per element. `<name>` is the target name with every byte outside `[A-Za-z0-9._-]` replaced by `_`, or `unnamed` |
 | MCUboot | `header.bin`, `image.bin` (ciphertext unchanged when encrypted), `tlv.bin` (protected TLVs, then TLVs) |
 | InstallShield | the cabinet's files as `unshield x` writes them, e.g. `Firmware/app/firmware.bin` |
+| Single-file InstallShield | each member under its stored name (`\` as the path separator), de-obfuscated and inflated, e.g. `Setup.ini`, `Product.msi`; unblob then unpacks the MSI and cabinets. A member that fails to inflate is written de-obfuscated, with an extraction problem naming it |
 | Inno Setup | the installer's files as `innoextract -e` writes them, e.g. `app/firmware.bin` |
 | Setup Factory | the installer's files as `sfextract` writes them, under folder variables such as `%AppFolder%/firmware.bin` |
 | WiX/Burn | `u0.cab` (UX container) and `a0.cab`, `a1.cab` … (attached containers), byte-identical to the input ranges; unblob's CAB handler then unpacks each |
@@ -157,6 +160,10 @@ does not verify it (FSD §18).
   missing volume (a gap in the `dataN.cab` numbers) or a `dataN.cab` without
   the `ISc(` signature is reported, not extracted (FR-ISC-09). InstallShield
   3 (`.Z`, `_sys1.cab`) is out of scope.
+- Single-file InstallShield (`installshield_setup`): layout types 5 and later
+  are not recognised. A member name that starts with `/`, carries a drive
+  letter or a `..` component is not written; it is reported as an extraction
+  problem (NFR-SEC-08).
 - Setup Factory: installers declaring more than 1000 files (FR-SF-07), more
   than one dependency module or file (FR-SF-06), a script over 64 MiB
   (NFR-SEC-04) or an LZMA dictionary over 64 MiB (NFR-SEC-05) are declined,

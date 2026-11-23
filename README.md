@@ -14,6 +14,7 @@ so there is no separate tool to learn.
 | `mcuboot` | MCUboot images (little-endian) | header, image and TLV area; image metadata in unblob's report |
 | `installshield` | InstallShield version 5 `data1.cab` | the cabinet's files (`unshield`) |
 | `installshield_set` | a directory holding an InstallShield cabinet set, version 5 or 6 and later | the set's files (`unshield`) |
+| `installshield_setup` | the package a single-file InstallShield `setup.exe` carries (`InstallShield` and `ISSetupStream` layouts) | its members (MSI, cabinets, `Setup.ini`, …) de-obfuscated and inflated, unpacked further by unblob |
 | `inno` | Inno Setup 5.x–7.1 installers | the installer's files (`innoextract`) |
 | `setup_factory` | Setup Factory 7–10 installers | the installer's files (`sfextract`) |
 | `wix_burn` | WiX Burn bundles | the UX and attached containers as `.cab`, unpacked further by unblob |
@@ -40,8 +41,8 @@ space is a gap between files, and the base address is in each file name
 | `sfextract` | Setup Factory | the fork [`Ext745/sfextract`](https://github.com/Ext745/sfextract) at `33399fae` (Setup Factory 7–10 fixes, offered upstream as [CybercentreCanada/sfextract#12](https://github.com/CybercentreCanada/sfextract/pull/12)) |
 | `7z` | NSIS installers (`nsis`); unblob's own CAB handler, for Burn containers | 7-Zip 26.00 (FSD C-04) |
 
-UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA, GBL, `.cyacd`/`.cyacd2` and
-WiX/Burn need no external tool.
+UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA, GBL, `.cyacd`/`.cyacd2`,
+single-file InstallShield packages and WiX/Burn need no external tool.
 [`.devcontainer/Dockerfile`](.devcontainer/Dockerfile) builds all of them.
 
 ## Installation
@@ -73,6 +74,11 @@ unblob -e out/ --report report.json updater.exe
   [#1255](https://github.com/onekey-sec/unblob/pull/1255) (MIT, ONEKEY GmbH;
   module headers name the commit). 7-Zip does not verify the installer CRC;
   the handler does and reports a mismatch.
+- **Single-file InstallShield** (`installshield_setup`) carries the code of
+  unblob PR [#1707](https://github.com/onekey-sec/unblob/pull/1707) (MIT,
+  ONEKEY GmbH; the module header names the commit). Layout types 5 and
+  later are not recognised, and member names that would land outside the
+  extraction directory are skipped and reported.
 - **Handler order with #1255.** Loaded as plugins together, this package's
   Inno Setup, Setup Factory and Burn handlers claim their installers. In an
   unblob that has #1255 merged, its generic `pe` handler is asked first and

@@ -26,7 +26,8 @@ Portions of this software carry code from unblob
 (https://github.com/onekey-sec/unblob) pull request #1255, licensed under the
 MIT License; each such module names the pull request and commit in its
 header (src/unblob_installers/_pe_headers.py, _pe_payload.py, _nsis.py,
-nsis.py):
+nsis.py), and from pull request #1707, under the same licence and notice
+(src/unblob_installers/installshield_setup.py):
 
 Copyright (c) 2022 ONEKEY GmbH
 

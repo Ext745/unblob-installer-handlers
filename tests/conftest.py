@@ -32,6 +32,10 @@ INPUTS = {
     "gbl": INTEGRATION / "archive" / "gbl" / "__input__",
     "cyacd": INTEGRATION / "archive" / "cyacd" / "__input__",
     "cyacd2": INTEGRATION / "archive" / "cyacd2" / "__input__",
+    "installshield_setup": INTEGRATION
+    / "archive"
+    / "installshield_setup"
+    / "__input__",
 }
 
 
