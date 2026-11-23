@@ -6,7 +6,7 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 docker run --rm --network none -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$HERE/..":/t unblob-installer-handlers-dev bash -euc '
 cd /t/integration
-mkdir -p archive/{uf2,ihex,dfuse,mcuboot,installshield,zigbee_ota,gbl}/__input__ executable/nsis/__input__
+mkdir -p archive/{uf2,ihex,dfuse,mcuboot,installshield,zigbee_ota,gbl,cyacd,cyacd2}/__input__ executable/nsis/__input__
 python3 ../fixtures/payload.py > /tmp/firmware.bin
 
 # UF2: RP2040 family at 0x10000000
@@ -62,5 +62,10 @@ python3 -c "import sys,struct; d=open(sys.argv[1],\"rb\").read(); p=open(\"/tmp/
 # GBL v3 (FSD §13d): built with pygbl (oracle, /opt/tools-venv); the script
 # checks that pygbl parses each file back and the program data is the payload
 /opt/tools-venv/bin/python -I /t/gbl_image.py /tmp/firmware.bin archive/gbl/__input__
+
+# .cyacd / .cyacd2 (FSD §13e): tests/cyacd_image.py, written from the FSD
+mkdir -p /tmp/cy && python3 /t/cyacd_image.py /tmp/firmware.bin /tmp/cy
+cp /tmp/cy/standard.cyacd archive/cyacd/__input__/ && cp /tmp/cy/standard.cyacd2 /tmp/cy/encrypted.cyacd2 archive/cyacd2/__input__/
+python3 -c "import binascii,sys; p=open(\"/tmp/firmware.bin\",\"rb\").read(); rows=[binascii.unhexlify(l[1:]) for l in open(sys.argv[1],\"rb\").read().split(b\"\\r\\n\") if l.startswith(b\":\")]; sys.exit(0 if all(sum(r)&0xFF==0 for r in rows) and b\"\".join(r[5:-1] for r in rows)==p[:768] else 1)" archive/cyacd/__input__/standard.cyacd && echo "cyacd: row checksums valid, rows equal the payload"
 '
-cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl} executable/nsis/__input__/standard.exe
+cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl,cyacd,cyacd2} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl,cyacd,cyacd2} executable/nsis/__input__/standard.exe

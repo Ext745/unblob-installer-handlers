@@ -23,6 +23,8 @@ OURS = {
     "wix_burn",
     "zigbee_ota",
     "gbl",
+    "cyacd",
+    "cyacd2",
 }
 
 

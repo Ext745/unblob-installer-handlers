@@ -17,6 +17,8 @@ so there is no separate tool to learn.
 | `inno` | Inno Setup 5.x–7.1 installers | the installer's files (`innoextract`) |
 | `setup_factory` | Setup Factory 7–10 installers | the installer's files (`sfextract`) |
 | `wix_burn` | WiX Burn bundles | the UX and attached containers as `.cab`, unpacked further by unblob |
+| `cyacd` | Cypress `.cyacd` (PSoC 3/4/5LP bootloader) | per flash array, one `.bin` per run of contiguous rows at row number × row length; silicon ID in unblob's report |
+| `cyacd2` | Infineon `.cyacd2` (DFU SDK, PSoC 4/6) | one `.bin` per contiguous address range; header values, `@APPINFO` and encryption (`@EIV`, written as stored) in unblob's report |
 | `gbl` | Silicon Labs GBL v3 (Gecko Bootloader) | one `.bin` per contiguous address range of the program data; other tags as `tag_0x<id>_<n>.bin`; encrypted images as raw tags |
 | `zigbee_ota` | Zigbee OTA upgrade files | one `tag_0x<tag>_<n>.bin` per sub-element, unpacked further by unblob; header fields in unblob's report |
 

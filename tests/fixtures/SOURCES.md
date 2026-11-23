@@ -35,6 +35,9 @@ give identical files, except `archive/mcuboot/__input__/encrypted.bin` (see its 
 | `archive/gbl/__input__/standard.gbl` | `tests/gbl_image.py` with pygbl 1.2.0 (zigpy/pygbl, Apache-2.0, oracle in `/opt/tools-venv`) | GBL v3, type 0; PROG at `0x0` and `0x400`, LZ4 at `0x10000`, LZMA at `0x10400` (the payload in four 1 KiB parts); Commander-style `0xFF` padding to 4 bytes | pygbl parses it back and its decompressed program data equals the payload |
 | `archive/gbl/__input__/tags.gbl` | as above | type `0x100` (signed bit); APP_INFO, METADATA (`uih gbl fixture metadata`), SIGNATURE (bytes 0..63, not a real signature) | pygbl parses it back |
 | `archive/gbl/__input__/encrypted.gbl` | as above: `standard.gbl` encrypted by pygbl with a throwaway key (bytes 0..15) and nonce (bytes 0..11) | type `0x1`; ENC_INIT and four ENC_GBL_DATA tags | pygbl parses it back |
+| `archive/cyacd/__input__/standard.cyacd` | `tests/cyacd_image.py` (this repository, MIT), written from FSD §13e.1 | silicon ID `0x04C81193`, revision `0x11`; 128-byte rows: array 0 rows 0–3 and 5, array 1 row 0 (the payload's first 768 bytes in order); CR LF | each row's checksum and data read independently equal the payload slice |
+| `archive/cyacd2/__input__/standard.cyacd2` | as above | file version 01, same silicon ID and revision, application ID 1, product ID `0x01020304`; `@APPINFO:0x10000000,0x3000`; lines at `0x10000000`, `0x10000100`, `0x10002000` (256 bytes each, addresses little-endian); LF | data read independently equals the payload slices |
+| `archive/cyacd2/__input__/encrypted.cyacd2` | as above, plus `@EIV:000102…0f` | the same data; the `@EIV` line only marks it encrypted (the data is not really encrypted) | as above |
 | `executable/nsis/__input__/standard.exe` | `makensis` 3.10 (`standard.nsi`), build time pinned | installs the payload as `firmware.bin` | `7z e` extracts `firmware.bin` identical to the payload |
 
 ## Text corpus (FR-HEX-02)

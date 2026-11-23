@@ -30,6 +30,8 @@ INPUTS = {
     "nsis": INTEGRATION / "executable" / "nsis" / "__input__",
     "zigbee_ota": INTEGRATION / "archive" / "zigbee_ota" / "__input__",
     "gbl": INTEGRATION / "archive" / "gbl" / "__input__",
+    "cyacd": INTEGRATION / "archive" / "cyacd" / "__input__",
+    "cyacd2": INTEGRATION / "archive" / "cyacd2" / "__input__",
 }
 
 
