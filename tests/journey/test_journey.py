@@ -141,3 +141,64 @@ def test_jrn_02_4_unblob_command_extracts_the_updater(realfiles: Path, tmp_path:
     assert errors(report) == []
     (out,) = [p for p in (tmp_path / "x").iterdir() if p.is_dir()]
     assert tree(out) == tree(oracle)
+
+
+# JRN-01.4 (FSD Phase 6): the seven handlers of §13a-§13e, by name from the
+# FSD. A name whose handler has not landed is xfail; its XPASS is the signal.
+PHASE6_NAMES = [
+    "installshield_setup",
+    "installshield_plain",
+    "nsis",
+    "zigbee_ota",
+    "gbl",
+    "cyacd",
+    "cyacd2",
+]
+PHASE6_LANDED = {"zigbee_ota"}
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        n
+        if n in PHASE6_LANDED
+        else pytest.param(
+            n, marks=pytest.mark.xfail(strict=True, reason=f"{n} not implemented")
+        )
+        for n in PHASE6_NAMES
+    ],
+)
+def test_jrn_01_4_phase6_handlers_registered(name: str):
+    pm = UnblobPluginManager()
+    pm.load_setuptools_entrypoints()
+    names = {h.NAME for group in pm.hook.unblob_register_handlers() for h in group}
+    assert name in names
+
+
+# JRN-03: a third-party device's vendor Zigbee OTA file [user 2026-11-23]:
+# the IKEA file inside its signed wrapper, OTA file at 616, a GBL v3 inside.
+ZINGO = Path("zigbee-ota/10082264-zingo_lds_stoftmoln-1.1.7.ota.ota.signed")
+ZINGO_OTA = (616, 616 + 287178)
+
+
+def test_jrn_03_1_vendor_ota_is_one_zigbee_ota_chunk(realfiles: Path, tmp_path: Path):
+    found = chunks(run_unblob(realfiles / ZINGO, tmp_path, max_depth=1))
+    assert [
+        (c.start_offset, c.end_offset) for c in found if c.handler_name == "zigbee_ota"
+    ] == [ZINGO_OTA]
+
+
+def test_jrn_03_2_upgrade_image_extracted(realfiles: Path, tmp_path: Path):
+    data = (realfiles / ZINGO).read_bytes()
+    run_unblob(realfiles / ZINGO, tmp_path, max_depth=2)
+    image = next(tmp_path.rglob("tag_0x0000_0.bin")).read_bytes()
+    # The upgrade image is the OTA file's only sub-element: after the 56-byte
+    # header and its 6-byte sub-element header, to the OTA file's end.
+    assert image == data[ZINGO_OTA[0] + 56 + 6 : ZINGO_OTA[1]]
+
+
+@pytest.mark.xfail(strict=True, reason="gbl handler not implemented")
+def test_jrn_03_3_gbl_inside_is_extracted_to_regions(realfiles: Path, tmp_path: Path):
+    result = run_unblob(realfiles / ZINGO, tmp_path)
+    assert any(c.handler_name == "gbl" for c in chunks(result))
+    assert list(tmp_path.rglob("0x*.bin"))

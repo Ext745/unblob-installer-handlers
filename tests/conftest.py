@@ -28,6 +28,7 @@ INPUTS = {
     "inno": INTEGRATION / "executable" / "inno" / "__input__",
     "burn": INTEGRATION / "executable" / "wix_burn" / "__input__",
     "nsis": INTEGRATION / "executable" / "nsis" / "__input__",
+    "zigbee_ota": INTEGRATION / "archive" / "zigbee_ota" / "__input__",
 }
 
 

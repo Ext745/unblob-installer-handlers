@@ -31,6 +31,7 @@ give identical files, except `archive/mcuboot/__input__/encrypted.bin` (see its 
 | `archive/mcuboot/__input__/protected.bin` | `imgtool` 2.5.0, `--security-counter 7` | as `standard.bin`, plus a protected TLV area (SEC_CNT) at `0x1020` with magic `0x6908` | `imgtool dumpinfo` shows a protected TLV area |
 | `archive/installshield/__input__/standard.cab` | `installshield_cab.py` (this repository, MIT), layout as unshield 1.6.2 reads it | version 5 cabinet: file group `Firmware`, directory `app`, `firmware.bin` (the payload, compressed) and `readme.txt` (stored) | `unshield x` 1.6.2 extracts both; `firmware.bin` identical to the payload |
 | `archive/installshield/__input__/set.tar` | `installshield_cab.py --set` (this repository, MIT) | the same cabinet as a version 5 set: `set/data1.hdr` (headers and descriptor) and `set/data1.cab` (zero-size descriptor and the data), tar metadata fixed | `unshield x` on `data1.hdr` extracts `firmware.bin` identical |
+| `archive/zigbee_ota/__input__/standard.ota` | `tests/zigbee_ota_image.py` (this repository, MIT), written from FSD §13c.1 | field control 0, manufacturer `0x1234`, image type `0x5678`, file version `0x01020304`; sub-elements `0x0000` (the payload) and `0xF000` (17 bytes) | the `0x0000` sub-element read independently equals the payload |
 | `executable/nsis/__input__/standard.exe` | `makensis` 3.10 (`standard.nsi`), build time pinned | installs the payload as `firmware.bin` | `7z e` extracts `firmware.bin` identical to the payload |
 
 ## Text corpus (FR-HEX-02)

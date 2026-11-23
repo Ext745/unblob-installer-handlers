@@ -16,6 +16,7 @@ from .mcuboot import MCUbootHandler, MCUbootImageReport
 from .setup_factory import SetupFactoryHandler
 from .uf2 import UF2Handler
 from .wix_burn import WixBurnHandler
+from .zigbee_ota import ZigbeeOtaHandler, ZigbeeOtaReport
 
 HANDLERS: list[type[Handler]] = [
     UF2Handler,
@@ -26,9 +27,10 @@ HANDLERS: list[type[Handler]] = [
     InnoSetupHandler,
     SetupFactoryHandler,
     WixBurnHandler,
+    ZigbeeOtaHandler,
 ]
 DIR_HANDLERS: list[type[DirectoryHandler]] = [InstallShieldSetHandler]
-REPORTS: list[type[Report]] = [MCUbootImageReport]
+REPORTS: list[type[Report]] = [MCUbootImageReport, ZigbeeOtaReport]
 
 
 @hookimpl
