@@ -154,7 +154,7 @@ PHASE6_NAMES = [
     "cyacd",
     "cyacd2",
 ]
-PHASE6_LANDED = {"zigbee_ota"}
+PHASE6_LANDED = {"zigbee_ota", "gbl"}
 
 
 @pytest.mark.parametrize(
@@ -197,7 +197,6 @@ def test_jrn_03_2_upgrade_image_extracted(realfiles: Path, tmp_path: Path):
     assert image == data[ZINGO_OTA[0] + 56 + 6 : ZINGO_OTA[1]]
 
 
-@pytest.mark.xfail(strict=True, reason="gbl handler not implemented")
 def test_jrn_03_3_gbl_inside_is_extracted_to_regions(realfiles: Path, tmp_path: Path):
     result = run_unblob(realfiles / ZINGO, tmp_path)
     assert any(c.handler_name == "gbl" for c in chunks(result))

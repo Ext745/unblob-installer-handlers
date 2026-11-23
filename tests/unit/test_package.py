@@ -21,6 +21,8 @@ OURS = {
     "inno",
     "setup_factory",
     "wix_burn",
+    "zigbee_ota",
+    "gbl",
 }
 
 

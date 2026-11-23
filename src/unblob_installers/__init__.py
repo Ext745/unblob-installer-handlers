@@ -9,6 +9,7 @@ from unblob.plugins import hookimpl
 from unblob.report import Report
 
 from .dfuse import DfuSeHandler
+from .gbl import GblHandler, GblReport
 from .ihex import IntelHexHandler
 from .inno import InnoSetupHandler
 from .installshield import InstallShieldHandler, InstallShieldSetHandler
@@ -28,9 +29,10 @@ HANDLERS: list[type[Handler]] = [
     SetupFactoryHandler,
     WixBurnHandler,
     ZigbeeOtaHandler,
+    GblHandler,
 ]
 DIR_HANDLERS: list[type[DirectoryHandler]] = [InstallShieldSetHandler]
-REPORTS: list[type[Report]] = [MCUbootImageReport, ZigbeeOtaReport]
+REPORTS: list[type[Report]] = [MCUbootImageReport, ZigbeeOtaReport, GblReport]
 
 
 @hookimpl

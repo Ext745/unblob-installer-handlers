@@ -17,6 +17,8 @@ so there is no separate tool to learn.
 | `inno` | Inno Setup 5.x–7.1 installers | the installer's files (`innoextract`) |
 | `setup_factory` | Setup Factory 7–10 installers | the installer's files (`sfextract`) |
 | `wix_burn` | WiX Burn bundles | the UX and attached containers as `.cab`, unpacked further by unblob |
+| `gbl` | Silicon Labs GBL v3 (Gecko Bootloader) | one `.bin` per contiguous address range of the program data; other tags as `tag_0x<id>_<n>.bin`; encrypted images as raw tags |
+| `zigbee_ota` | Zigbee OTA upgrade files | one `tag_0x<tag>_<n>.bin` per sub-element, unpacked further by unblob; header fields in unblob's report |
 
 The firmware containers are written without fill bytes: a gap in the address
 space is a gap between files, and the base address is in each file name

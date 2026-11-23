@@ -6,7 +6,7 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 docker run --rm --network none -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$HERE/..":/t unblob-installer-handlers-dev bash -euc '
 cd /t/integration
-mkdir -p archive/{uf2,ihex,dfuse,mcuboot,installshield,zigbee_ota}/__input__ executable/nsis/__input__
+mkdir -p archive/{uf2,ihex,dfuse,mcuboot,installshield,zigbee_ota,gbl}/__input__ executable/nsis/__input__
 python3 ../fixtures/payload.py > /tmp/firmware.bin
 
 # UF2: RP2040 family at 0x10000000
@@ -58,5 +58,9 @@ touch -d @1700000000 /tmp/nsisbuild/firmware.bin
 # oracle is an independent read of the sub-element holding the payload
 python3 /t/zigbee_ota_image.py archive/zigbee_ota/__input__/standard.ota
 python3 -c "import sys,struct; d=open(sys.argv[1],\"rb\").read(); p=open(\"/tmp/firmware.bin\",\"rb\").read(); t,l=struct.unpack_from(\"<HI\",d,56); sys.exit(0 if (t,d[62:62+l])==(0,p) else 1)" archive/zigbee_ota/__input__/standard.ota && echo "zigbee_ota: upgrade image identical to the payload"
+
+# GBL v3 (FSD §13d): built with pygbl (oracle, /opt/tools-venv); the script
+# checks that pygbl parses each file back and the program data is the payload
+/opt/tools-venv/bin/python -I /t/gbl_image.py /tmp/firmware.bin archive/gbl/__input__
 '
-cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota} executable/nsis/__input__/standard.exe
+cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl} executable/nsis/__input__/standard.exe

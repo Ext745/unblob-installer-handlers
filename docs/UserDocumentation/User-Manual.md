@@ -111,6 +111,8 @@ unblob -e out/ --report report.json updater.exe
 | `inno` | a PE carrying Inno Setup 5.x–7.1 setup data |
 | `setup_factory` | a PE carrying a Setup Factory 7–10 overlay |
 | `wix_burn` | a PE with a `.wixburn` section |
+| `gbl` | Silicon Labs GBL v3 (header tag `0x03A617EB`, version 3) through its end tag, plus `0xFF` padding to a 4-byte multiple |
+| `zigbee_ota` | Zigbee OTA files (`0x0BEEF11E`, header version `0x0100`), header to the end of the total image size |
 
 For a PE installer the chunk runs from `MZ` to the end of the overlay,
 including an Authenticode certificate table; anything appended after it is

@@ -38,16 +38,7 @@ def upgrade_image(data: bytes, offset: int) -> tuple[int, bytes]:
     raise AssertionError("no upgrade image")
 
 
-GBL_PENDING = pytest.mark.xfail(
-    strict=True, reason="gbl handler not implemented (FSD §13d)"
-)
-
-
-@pytest.mark.parametrize(
-    "name,offset,has_gbl",
-    [pytest.param(*f, marks=GBL_PENDING) if f[2] else f for f in FILES],
-    ids=[f[0] for f in FILES],
-)
+@pytest.mark.parametrize("name,offset,has_gbl", FILES, ids=[f[0] for f in FILES])
 def test_tc_zota_06_real_ota_files_give_their_upgrade_image(
     name: str, offset: int, has_gbl: bool, realfiles: Path, tmp_path: Path
 ):

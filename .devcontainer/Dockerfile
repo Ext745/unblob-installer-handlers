@@ -40,12 +40,13 @@ RUN apt-get update \
 # the SF7 7.0.1/7.0.3, SF8 dependency-module and SF 9.2 layout fixes (branch
 # sf9-2-layout, on top of it), pinned by commit on this project's fork until
 # an upstream release contains them (FSD §16.1, C-11).
-# imgtool and intelhex are test oracles (FSD §16.1), never called by a handler.
+# imgtool and intelhex are test oracles (FSD §16.1), never called by a handler;
+# pygbl (Apache-2.0) builds the GBL fixtures in tests/fixtures/build.sh (§13d).
 ARG SFEXTRACT_REV=33399fae02b0e462497bbcf75c51e24ccff15acc
 RUN python3 -m venv /opt/tools-venv \
  && /opt/tools-venv/bin/pip install --no-cache-dir 'unblob==26.6.4' \
       "sfextract @ git+https://github.com/Ext745/sfextract@${SFEXTRACT_REV}" \
-      'imgtool==2.5.0' 'intelhex==2.3.0'
+      'imgtool==2.5.0' 'intelhex==2.3.0' 'pygbl[lz4]==1.2.0'
 
 # CPython 3.10 for C-02's lower bound: Ubuntu 26.04 packages no 3.10, so a
 # pinned python-build-standalone build. TC-CON-02 builds a venv from it and
