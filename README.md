@@ -19,6 +19,7 @@ so there is no separate tool to learn.
 | `wix_burn` | WiX Burn bundles | the UX and attached containers as `.cab`, unpacked further by unblob |
 | `cyacd` | Cypress `.cyacd` (PSoC 3/4/5LP bootloader) | per flash array, one `.bin` per run of contiguous rows at row number × row length; silicon ID in unblob's report |
 | `cyacd2` | Infineon `.cyacd2` (DFU SDK, PSoC 4/6) | one `.bin` per contiguous address range; header values, `@APPINFO` and encryption (`@EIV`, written as stored) in unblob's report |
+| `nsis` | Nullsoft (NSIS) installers | the installer's files (`7z`), after its CRC is checked (a mismatch is reported) |
 | `gbl` | Silicon Labs GBL v3 (Gecko Bootloader) | one `.bin` per contiguous address range of the program data; other tags as `tag_0x<id>_<n>.bin`; encrypted images as raw tags |
 | `zigbee_ota` | Zigbee OTA upgrade files | one `tag_0x<tag>_<n>.bin` per sub-element, unpacked further by unblob; header fields in unblob's report |
 
@@ -37,9 +38,10 @@ space is a gap between files, and the base address is in each file name
 | `unshield` | InstallShield | 1.6.2 |
 | `innoextract` | Inno Setup | upstream PR [#210](https://github.com/dscharrer/innoextract/pull/210) at `376a13e7`; the packaged 1.9 fails on Inno Setup 6.4.3 and later |
 | `sfextract` | Setup Factory | the fork [`Ext745/sfextract`](https://github.com/Ext745/sfextract) at `33399fae` (Setup Factory 7–10 fixes, offered upstream as [CybercentreCanada/sfextract#12](https://github.com/CybercentreCanada/sfextract/pull/12)) |
-| `7z` | unblob's own CAB handler, for Burn containers | as unblob installs it |
+| `7z` | NSIS installers (`nsis`); unblob's own CAB handler, for Burn containers | 7-Zip 26.00 (FSD C-04) |
 
-UF2, Intel HEX, DfuSe, MCUboot and WiX/Burn need no external tool.
+UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA, GBL, `.cyacd`/`.cyacd2` and
+WiX/Burn need no external tool.
 [`.devcontainer/Dockerfile`](.devcontainer/Dockerfile) builds all of them.
 
 ## Installation
@@ -67,9 +69,10 @@ unblob -e out/ --report report.json updater.exe
 
 ## Limitations
 
-- **NSIS** installers are not handled here. They need unblob PR
-  [#1255](https://github.com/onekey-sec/unblob/pull/1255), which can be
-  loaded as a plugin alongside this one (`unblob -P <path-to-#1255> <file>`).
+- **NSIS** support carries the NSIS code of unblob PR
+  [#1255](https://github.com/onekey-sec/unblob/pull/1255) (MIT, ONEKEY GmbH;
+  module headers name the commit). 7-Zip does not verify the installer CRC;
+  the handler does and reports a mismatch.
 - **Handler order with #1255.** Loaded as plugins together, this package's
   Inno Setup, Setup Factory and Burn handlers claim their installers. In an
   unblob that has #1255 merged, its generic `pe` handler is asked first and

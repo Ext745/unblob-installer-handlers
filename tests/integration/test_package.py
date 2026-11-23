@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from unblob.file_utils import InvalidInputFormat
-from unblob.models import DirectoryExtractor, ExtractError
+from unblob.models import DirectoryExtractor, ExtractError, File
 
 import unblob_installers
 from tests.conftest import INPUTS
@@ -125,9 +125,18 @@ def test_tc_pkg_05_dependency_listing_covers_our_commands(
     sample.write_bytes(b"input the recorder never reads")
     for handler in [*unblob_installers.HANDLERS, *unblob_installers.DIR_HANDLERS]:
         out = tmp_path / handler.NAME
-        out.mkdir()
         extractor = handler.EXTRACTOR
-        assert extractor is not None
+        if extractor is None:
+            # A per-chunk extractor (nsis, from #1255): run the chunk its
+            # handler finds on its own fixture, so its tool is reached.
+            (source,) = sorted(INPUTS[handler.NAME].iterdir())
+            with File.from_path(source) as file:
+                chunk = handler().calculate_chunk(file, 0)
+            assert chunk is not None
+            with contextlib.suppress(ExtractError, InvalidInputFormat):
+                chunk.extract(source, out)
+            continue
+        out.mkdir()
         with contextlib.suppress(ExtractError, InvalidInputFormat):
             if isinstance(extractor, DirectoryExtractor):
                 extractor.extract([sample], out)

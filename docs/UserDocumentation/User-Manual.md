@@ -35,10 +35,10 @@ UF2, Intel HEX, DfuSe, MCUboot and WiX/Burn need no external tool.
 `.devcontainer/Dockerfile` builds all of the above and is the reference for
 how to install them.
 
-The Windows installer handlers sit beside the generic PE and NSIS handlers of
-unblob PR #1255, which unblob 26.6.4 does not contain. Without #1255 the
-installers in §7–§9 of the FSD are still claimed by these handlers; NSIS
-installers are not unpacked at all.
+The Windows installer handlers sit beside the generic PE handler of unblob
+PR #1255, which unblob 26.6.4 does not contain. Without #1255 the installers
+in §7–§9 of the FSD are still claimed by these handlers, and NSIS installers
+by this package's `nsis` handler, which carries #1255's NSIS code (FSD §13b).
 
 ## 2. Installation
 
@@ -87,10 +87,12 @@ Without installing, point unblob at the package directory instead (FR-PKG-02):
 unblob -P src/unblob_installers <file>
 ```
 
-To use the NSIS handler of unblob PR #1255 alongside this package, load it
-as a plugin too: `unblob -P /opt/pr1255 <file>`, where `/opt/pr1255` holds
-the PR's `pe.py` as `.devcontainer/Dockerfile` installs it. Load it this way,
-as a plugin: see §5 on what changes once #1255 is merged into unblob.
+NSIS installers need no other plugin: the `nsis` handler extracts them with
+`7z`. To use the generic PE handler of unblob PR #1255 alongside this
+package, load it as a plugin too: `unblob -P /opt/pr1255 <file>`, where
+`/opt/pr1255` holds the PR's `pe.py` as `.devcontainer/Dockerfile` installs
+it; this package's handlers are asked first. See §5 on what changes once
+#1255 is merged into unblob.
 
 ## 3. Unpacking a file
 
@@ -113,6 +115,7 @@ unblob -e out/ --report report.json updater.exe
 | `wix_burn` | a PE with a `.wixburn` section |
 | `cyacd` | a `.cyacd` header line (12 hex digits) followed by checksummed rows, through the last valid row |
 | `cyacd2` | a `.cyacd2` header line (24 hex digits, file version `01`) followed by `@` and data lines, through the last valid data line |
+| `nsis` | a PE whose NSIS firstheader sits at the first 512-byte boundary after the PE image |
 | `gbl` | Silicon Labs GBL v3 (header tag `0x03A617EB`, version 3) through its end tag, plus `0xFF` padding to a 4-byte multiple |
 | `zigbee_ota` | Zigbee OTA files (`0x0BEEF11E`, header version `0x0100`), header to the end of the total image size |
 
@@ -178,7 +181,7 @@ does not verify it (FSD §18).
 | Handlers missing from the run; only unblob's own handlers appear | Package installed in a different environment than the `unblob` on `PATH` | `pip install` into unblob's own venv, or use `-P` (§2) |
 | UF2 or Intel HEX extraction fails naming two block or line numbers | The file writes different bytes to the same address (FR-UF2-08, FR-HEX-07) | The file is inconsistent; identical duplicate writes are accepted |
 | Inno Setup or InstallShield: `UnknownError`, "No usable temporary directory" in the report | Version 0.1.0 under the `unblob` command: its sandbox blocked the handlers' scratch files (fixed in 0.1.1, FSD FR-COM-06) | Install 0.1.1 or later |
-| An installer is unpacked only as a generic PE, or not at all | Not one of the supported installer types or versions (§5), or an NSIS installer without #1255 | Check the version; NSIS needs unblob with #1255 |
+| An installer is unpacked only as a generic PE, or not at all | Not one of the supported installer types or versions (§5) | Check the version; for NSIS, check that `7z` is on PATH |
 | A lone `data1.cab` from InstallShield 6+ is not unpacked | Only sets are claimed (FR-ISC-06) | Run unblob on the directory, or on an archive of it, that holds `data1.hdr` and the `.cab` volumes |
 | InstallShield set: `ExtractionProblem` "InstallShield set has no dataN.cab volume" or "… lacks the ISc( signature", no files | A volume of the set is missing or is not a cabinet (FR-ISC-09); 0.1.1 and earlier extracted the volumes before the gap and dropped the rest without a report | Supply every volume `data1.cab` … `dataN.cab`, then run again |
 

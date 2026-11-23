@@ -25,6 +25,7 @@ OURS = {
     "gbl",
     "cyacd",
     "cyacd2",
+    "nsis",
 }
 
 
