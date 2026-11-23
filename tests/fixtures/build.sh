@@ -6,7 +6,7 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 docker run --rm --network none -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$HERE/..":/t unblob-installer-handlers-dev bash -euc '
 cd /t/integration
-mkdir -p archive/{uf2,ihex,dfuse,mcuboot,installshield,installshield_setup,zigbee_ota,gbl,cyacd,cyacd2}/__input__ executable/nsis/__input__
+mkdir -p archive/{uf2,ihex,dfuse,mcuboot,installshield,installshield_setup,zigbee_ota,gbl,cyacd,cyacd2}/__input__ executable/{nsis,installshield_plain}/__input__
 python3 ../fixtures/payload.py > /tmp/firmware.bin
 
 # UF2: RP2040 family at 0x10000000
@@ -70,5 +70,6 @@ python3 -c "import binascii,sys; p=open(\"/tmp/firmware.bin\",\"rb\").read(); ro
 
 # InstallShield single-file packages (FSD §13a): tests/installshield_setup_image.py, written from §13a.1
 python3 /t/installshield_setup_image.py /tmp/firmware.bin archive/installshield_setup/__input__
+python3 /t/installshield_plain_image.py /tmp/firmware.bin executable/installshield_plain/__input__
 '
-cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl,cyacd,cyacd2,pftw} executable/nsis/__input__/standard.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl,cyacd,cyacd2,pftw} executable/nsis/__input__/standard.exe
+cd "$HERE/../integration" && ls -l */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl,cyacd,cyacd2,pftw} executable/nsis/__input__/standard.exe executable/installshield_plain/__input__/*.exe | awk '{print $5, $9}' && sha256sum */*/__input__/*.{uf2,hex,dfu,bin,cab,tar,ota,gbl,cyacd,cyacd2,pftw} executable/nsis/__input__/standard.exe executable/installshield_plain/__input__/*.exe

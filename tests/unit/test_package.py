@@ -27,6 +27,7 @@ OURS = {
     "cyacd2",
     "nsis",
     "installshield_setup",
+    "installshield_plain",
 }
 
 

@@ -20,6 +20,7 @@ so there is no separate tool to learn.
 | `wix_burn` | WiX Burn bundles | the UX and attached containers as `.cab`, unpacked further by unblob |
 | `cyacd` | Cypress `.cyacd` (PSoC 3/4/5LP bootloader) | per flash array, one `.bin` per run of contiguous rows at row number × row length; silicon ID in unblob's report |
 | `cyacd2` | Infineon `.cyacd2` (DFU SDK, PSoC 4/6) | one `.bin` per contiguous address range; header values, `@APPINFO` and encryption (`@EIV`, written as stored) in unblob's report |
+| `installshield_plain` | a single-file InstallShield `setup.exe` whose files follow the PE image unencrypted (ANSI or UTF-16 "plain" layout, no package header) | each file under its destination name, e.g. `Disk1/data1.hdr`; an InstallShield set among them is unpacked further by `installshield_set` |
 | `nsis` | Nullsoft (NSIS) installers | the installer's files (`7z`), after its CRC is checked (a mismatch is reported) |
 | `gbl` | Silicon Labs GBL v3 (Gecko Bootloader) | one `.bin` per contiguous address range of the program data; other tags as `tag_0x<id>_<n>.bin`; encrypted images as raw tags |
 | `zigbee_ota` | Zigbee OTA upgrade files | one `tag_0x<tag>_<n>.bin` per sub-element, unpacked further by unblob; header fields in unblob's report |
@@ -42,7 +43,7 @@ space is a gap between files, and the base address is in each file name
 | `7z` | NSIS installers (`nsis`); unblob's own CAB handler, for Burn containers | 7-Zip 26.00 (FSD C-04) |
 
 UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA, GBL, `.cyacd`/`.cyacd2`,
-single-file InstallShield packages and WiX/Burn need no external tool.
+single-file InstallShield setup files and WiX/Burn need no external tool.
 [`.devcontainer/Dockerfile`](.devcontainer/Dockerfile) builds all of them.
 
 ## Installation

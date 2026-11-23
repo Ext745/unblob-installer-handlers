@@ -36,6 +36,10 @@ INPUTS = {
     / "archive"
     / "installshield_setup"
     / "__input__",
+    "installshield_plain": INTEGRATION
+    / "executable"
+    / "installshield_plain"
+    / "__input__",
 }
 
 

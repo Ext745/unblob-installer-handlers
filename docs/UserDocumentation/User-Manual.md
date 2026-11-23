@@ -32,7 +32,7 @@ is no separate tool to learn.
 | `7z` | unblob's own CAB handler, when it recurses into Burn containers | as unblob's dependency list installs it |
 
 UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA, GBL, `.cyacd`/`.cyacd2`,
-single-file InstallShield packages and WiX/Burn need no external tool.
+single-file InstallShield setup files and WiX/Burn need no external tool.
 `.devcontainer/Dockerfile` builds all of the above and is the reference for
 how to install them.
 
@@ -112,6 +112,7 @@ unblob -e out/ --report report.json updater.exe
 | `installshield` | a self-contained version 5 `data1.cab` |
 | `installshield_set` | a directory holding a cabinet set (`data1.hdr` and/or `data1.cab` … `dataN.cab`), version 5 or 6 and later |
 | `installshield_setup` | the `InstallShield\0` or `ISSetupStream\0` package after a single-file `setup.exe` stub, from its signature to the end of its last member |
+| `installshield_plain` | a PE whose overlay holds an ANSI or UTF-16 plain InstallShield package, from the `MZ` to the end of the last file (through the certificate table when only alignment bytes lie between) |
 | `inno` | a PE carrying Inno Setup 5.x–7.1 setup data |
 | `setup_factory` | a PE carrying a Setup Factory 7–10 overlay |
 | `wix_burn` | a PE with a `.wixburn` section |
@@ -142,6 +143,7 @@ fill bytes, so a gap between regions is a gap between files. Addresses are
 | MCUboot | `header.bin`, `image.bin` (ciphertext unchanged when encrypted), `tlv.bin` (protected TLVs, then TLVs) |
 | InstallShield | the cabinet's files as `unshield x` writes them, e.g. `Firmware/app/firmware.bin` |
 | Single-file InstallShield | each member under its stored name (`\` as the path separator), de-obfuscated and inflated, e.g. `Setup.ini`, `Product.msi`; unblob then unpacks the MSI and cabinets. A member that fails to inflate is written de-obfuscated, with an extraction problem naming it |
+| Single-file InstallShield, plain layout | each file under its destination name (`\` as the path separator), e.g. `Disk1/data1.hdr`, `Disk1/data1.cab`; unblob then unpacks the set with `installshield_set` |
 | Inno Setup | the installer's files as `innoextract -e` writes them, e.g. `app/firmware.bin` |
 | Setup Factory | the installer's files as `sfextract` writes them, under folder variables such as `%AppFolder%/firmware.bin` |
 | WiX/Burn | `u0.cab` (UX container) and `a0.cab`, `a1.cab` … (attached containers), byte-identical to the input ranges; unblob's CAB handler then unpacks each |
@@ -163,7 +165,8 @@ does not verify it (FSD §18).
 - Single-file InstallShield (`installshield_setup`): layout types 5 and later
   are not recognised. A member name that starts with `/`, carries a drive
   letter or a `..` component is not written; it is reported as an extraction
-  problem (NFR-SEC-08).
+  problem (NFR-SEC-08). The same holds for the destination names of
+  `installshield_plain`.
 - Setup Factory: installers declaring more than 1000 files (FR-SF-07), more
   than one dependency module or file (FR-SF-06), a script over 64 MiB
   (NFR-SEC-04) or an LZMA dictionary over 64 MiB (NFR-SEC-05) are declined,

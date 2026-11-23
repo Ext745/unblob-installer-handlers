@@ -14,6 +14,7 @@ from .gbl import GblHandler, GblReport
 from .ihex import IntelHexHandler
 from .inno import InnoSetupHandler
 from .installshield import InstallShieldHandler, InstallShieldSetHandler
+from .installshield_plain import InstallShieldPlainHandler
 from .installshield_setup import InstallShieldSetupHandler
 from .mcuboot import MCUbootHandler, MCUbootImageReport
 from .nsis import NSISHandler
@@ -37,6 +38,7 @@ HANDLERS: list[type[Handler]] = [
     Cyacd2Handler,
     NSISHandler,
     InstallShieldSetupHandler,
+    InstallShieldPlainHandler,
 ]
 DIR_HANDLERS: list[type[DirectoryHandler]] = [InstallShieldSetHandler]
 REPORTS: list[type[Report]] = [

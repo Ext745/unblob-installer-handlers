@@ -70,3 +70,22 @@ def find_section(buf, start: int, name: bytes) -> tuple[int, int] | None:
         if section == name:
             return start + pointer, size
     return None
+
+
+def image_end(buf, start: int) -> int:
+    """End of the section whose raw data ends last, relative to start (FSD §13a.1).
+
+    Reads the section table one header at a time, allocating nothing per
+    section (NFR-SEC-06).
+    """
+    pe = _pe_header(buf, start)
+    count, optional_size = _unpack("<H12xH", buf, pe + 6)
+    table = pe + 24 + optional_size
+    end = 0
+    for i in range(count):
+        raw_size, raw_pointer = _unpack("<II", buf, table + 40 * i + 16)
+        if raw_size:
+            end = max(end, raw_pointer + raw_size)
+    if not end:
+        raise InvalidInputFormat("PE without section data")
+    return end

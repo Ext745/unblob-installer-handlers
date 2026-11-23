@@ -154,7 +154,15 @@ PHASE6_NAMES = [
     "cyacd",
     "cyacd2",
 ]
-PHASE6_LANDED = {"zigbee_ota", "gbl", "cyacd", "cyacd2", "nsis", "installshield_setup"}
+PHASE6_LANDED = {
+    "zigbee_ota",
+    "gbl",
+    "cyacd",
+    "cyacd2",
+    "nsis",
+    "installshield_setup",
+    "installshield_plain",
+}
 
 
 @pytest.mark.parametrize(
