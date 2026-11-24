@@ -46,6 +46,9 @@ CRC_RESIDUE = 0x2144DF1C
 TAG_HEADER = struct.Struct("<II")  # tag ID, length
 # NFR-SEC-07: one LZ4 or LZMA tag decompresses to at most 16 MiB.
 DECOMPRESSED_CAP = 16 * 1024 * 1024
+# NFR-SEC-09: liblzma may use at most 17 MiB to decode one LZMA tag, which
+# admits a 16 MiB dictionary; liblzma checks it before allocating.
+LZMA_MEMLIMIT = 17 * 1024 * 1024
 _CRC_BLOCK = 1 << 20
 
 
@@ -130,10 +133,17 @@ def _decompress(tag_id: int, data: bytes) -> bytes:
                 f"LZ4 data does not decompress within the cap: {exc}"
             ) from None
     else:
-        decoder = lzma.LZMADecompressor(format=lzma.FORMAT_ALONE)
+        decoder = lzma.LZMADecompressor(
+            format=lzma.FORMAT_ALONE, memlimit=LZMA_MEMLIMIT
+        )
         try:
             out = decoder.decompress(data, max_length=DECOMPRESSED_CAP + 1)
         except lzma.LZMAError as exc:
+            if "memory usage limit" in str(exc).lower():  # NFR-SEC-09
+                raise ValueError(
+                    f"LZMA dictionary needs more than {LZMA_MEMLIMIT} bytes"
+                    " of decoder memory"
+                ) from None
             raise ValueError(f"LZMA data is corrupt: {exc}") from None
         if len(out) <= DECOMPRESSED_CAP and not decoder.eof:
             raise ValueError("LZMA stream is truncated")
