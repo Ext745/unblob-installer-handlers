@@ -34,9 +34,12 @@ def test_tc_mcb_06_signed_only_with_a_signature_tlv():
     info = mcuboot().image_info
     sha = (0x10, bytes(32))
     assert info(FIXTURE).signed is False  # hash TLV only
+    assert info(FIXTURE).encrypted is False
     assert info(with_tlv_area(FIXTURE, [sha])).signed is False
     for sig_type in (0x20, 0x22, 0x23, 0x24):  # RSA2048, ECDSASIG, RSA3072, ED25519
-        assert info(with_tlv_area(FIXTURE, [sha, (sig_type, bytes(64))])).signed is True
+        signed = info(with_tlv_area(FIXTURE, [sha, (sig_type, bytes(64))]))
+        assert signed.signed is True
+        assert signed.encrypted is False
 
 
 def test_tc_mcb_07_encrypted_follows_the_flag_bits():
