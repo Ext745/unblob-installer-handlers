@@ -171,12 +171,7 @@ def sha256_of(path: Path) -> str:
     [
         # Unobfuscated: inflate is fed the reader's full-size slices, the
         # case that held 32 MiB per slice before NFR-SEC-11.
-        pytest.param(
-            "zeros.bin",
-            lambda: bytes(64 * MIB),
-            0,
-            marks=pytest.mark.xfail(strict=True, reason="NFR-SEC-11 not implemented"),
-        ),
+        ("zeros.bin", lambda: bytes(64 * MIB), 0),
         ("random.bin", lambda: os.urandom(8 * MIB), M1024),
     ],
 )

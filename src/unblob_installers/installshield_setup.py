@@ -175,17 +175,28 @@ def _decoded_slices(
     )
 
 
+INFLATE_STEP = 0x10000
+
+
 def _inflate_slices(chunks: Iterable[bytes]) -> Iterable[bytes]:
+    """Inflate in pieces of at most INFLATE_STEP bytes (NFR-SEC-11).
+
+    One unbounded decompress() call on a slice of highly compressible data
+    returns up to ~1000 x the slice; draining unconsumed_tail keeps memory
+    flat whatever the member holds.
+    """
     decompressor = zlib.decompressobj()
     for chunk in chunks:
-        data = decompressor.decompress(chunk)
-        if data:
-            yield data
+        data = chunk
+        while data and not decompressor.eof:
+            out = decompressor.decompress(data, INFLATE_STEP)
+            if out:
+                yield out
+            data = decompressor.unconsumed_tail
+        if decompressor.eof:
+            break
     if not decompressor.eof:
         raise zlib.error("truncated zlib stream")
-    tail = decompressor.flush()
-    if tail:
-        yield tail
 
 
 class _Member:
