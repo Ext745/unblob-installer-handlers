@@ -30,3 +30,11 @@ def test_tc_uf2_04_one_region_file_holds_the_payload(tmp_path: Path, payload: by
     regions = sorted(p for p in tmp_path.rglob("*.bin") if p.parent.name == "RP2040")
     assert [p.name for p in regions] == ["0x10000000.bin"]
     assert regions[0].read_bytes() == payload
+
+
+def test_tc_uf2_05_fixture_region_file_named(tmp_path: Path):
+    run_unblob(FIXTURE, tmp_path)
+    (out,) = list(tmp_path.rglob("standard.uf2_extract"))
+    names = sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
+    # Must NOT: a decimal or uppercase address, or a name without one.
+    assert names == ["RP2040/0x10000000.bin"]

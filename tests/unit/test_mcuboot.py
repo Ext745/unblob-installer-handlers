@@ -2,6 +2,7 @@
 
 import importlib
 import struct
+from pathlib import Path
 from types import ModuleType
 
 import pytest
@@ -61,3 +62,23 @@ def test_tc_mcb_03_protected_tlvs_without_their_magic_are_not_claimed():
     corrupted = PROTECTED[:at] + struct.pack("<H", 0x6907) + PROTECTED[at + 2 :]
     with pytest.raises(InvalidInputFormat):
         mcuboot().image_info(corrupted)
+
+
+def test_tc_mcb_04_extractor_writes_header_image_tlv(tmp_path: Path):
+    source = tmp_path / "standard.bin"
+    source.write_bytes(FIXTURE)
+    out = tmp_path / "out"
+    out.mkdir()
+    mcuboot().MCUbootExtractor().extract(source, out)
+    assert sorted(p.name for p in out.iterdir()) == [
+        "header.bin",
+        "image.bin",
+        "tlv.bin",
+    ]
+    header, image, tlv = (
+        (out / name).read_bytes() for name in ("header.bin", "image.bin", "tlv.bin")
+    )
+    # Must NOT: header bytes inside image.bin.
+    (header_size,) = struct.unpack_from("<H", FIXTURE, 8)
+    assert len(header) == header_size
+    assert header + image + tlv == FIXTURE
