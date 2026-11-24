@@ -109,6 +109,35 @@ def test_tc_hex_03_eof_record_alone_is_not_claimed():
     assert ihex().chunk_end(b":00000001FF\n", 0) is None
 
 
+@pytest.mark.parametrize(
+    "records",
+    [
+        [record(0x04, 0, b"\x08\x00")],
+        [
+            record(0x02, 0, b"\x10\x00"),
+            record(0x04, 0, b"\x08\x00"),
+            record(0x05, 0, b"\x08\x00\x01\x01"),
+        ],
+        [record(0x03, 0, b"\x00\x00\x10\x00")],
+    ],
+    ids=["04", "02-04-05", "03"],
+)
+def test_tc_hex_03_address_records_without_data_are_not_claimed(
+    records: list[bytes],
+):
+    text = b"\n".join([*records, record(0x01, 0, b"")]) + b"\n"
+    assert ihex().chunk_end(text, 0) is None
+
+
+def test_tc_hex_03_control_one_data_record_is_claimed():
+    eof = record(0x01, 0, b"")
+    text = b"\n".join(
+        [record(0x04, 0, b"\x08\x00"), record(0x00, 0, b"\x11" * 16), eof]
+    )
+    text += b"\n"
+    assert ihex().chunk_end(text, 0) == len(text)
+
+
 def test_tc_hex_07_conflicting_overlap_fails_naming_both_lines(tmp_path: Path):
     text = (
         b"\n".join(

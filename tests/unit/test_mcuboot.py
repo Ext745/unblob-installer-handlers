@@ -26,6 +26,17 @@ def with_tlv_area(image: bytes, tlvs: list[tuple[int, bytes]]) -> bytes:
     return body + struct.pack("<HH", 0x6907, 4 + len(entries)) + entries
 
 
+def with_protected_area(image: bytes, tlvs: list[tuple[int, bytes]]) -> bytes:
+    """Give an image without protected TLVs a protected area of the given TLVs."""
+    hdr_size, prot_size, img_size = struct.unpack_from("<HHI", image, 8)
+    assert prot_size == 0
+    entries = b"".join(struct.pack("<HH", t, len(v)) + v for t, v in tlvs)
+    area = struct.pack("<HH", 0x6908, 4 + len(entries)) + entries
+    header = image[:10] + struct.pack("<H", len(area)) + image[12:hdr_size]
+    end = hdr_size + img_size
+    return header + image[hdr_size:end] + area + image[end:]
+
+
 def with_flags(image: bytes, flags: int) -> bytes:
     return image[:16] + struct.pack("<I", flags) + image[20:]
 
@@ -40,6 +51,13 @@ def test_tc_mcb_06_signed_only_with_a_signature_tlv():
         signed = info(with_tlv_area(FIXTURE, [sha, (sig_type, bytes(64))]))
         assert signed.signed is True
         assert signed.encrypted is False
+    # "The TLV areas": a signature TLV counts in the protected area too.
+    sec_cnt = (0x50, struct.pack("<I", 7))
+    in_protected = info(with_protected_area(FIXTURE, [sec_cnt, (0x22, bytes(64))]))
+    assert (in_protected.signed, in_protected.encrypted) == (True, False)
+    counter_only = info(with_protected_area(FIXTURE, [sec_cnt]))
+    assert (counter_only.signed, counter_only.encrypted) == (False, False)
+    assert 0x50 in counter_only.tlv_types  # the protected area was read
 
 
 def test_tc_mcb_07_encrypted_follows_the_flag_bits():
