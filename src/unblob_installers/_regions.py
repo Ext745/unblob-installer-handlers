@@ -5,6 +5,7 @@ never filled, so the bytes written never exceed the bytes the image carries
 (NFR-SEC-02).
 """
 
+import bisect
 import re
 from collections.abc import Iterable
 from pathlib import PurePosixPath
@@ -30,24 +31,26 @@ def assemble(writes: Iterable[tuple[int, bytes, int]]) -> list[tuple[int, bytes]
     Identical overlapping writes are accepted; differing ones raise
     OverlapConflictError naming both sources.
     """
-    regions: list[tuple[int, bytearray, list[int]]] = []
+    # Each region keeps its sources as spans (offset in the region where a
+    # source's bytes begin, source), not one entry per byte (NFR-SEC-10).
+    regions: list[tuple[int, bytearray, list[int], list[int]]] = []
     for address, data, source in sorted(writes, key=lambda w: (w[0], w[2])):
         if regions:
-            start, buf, sources = regions[-1]
+            start, buf, offsets, sources = regions[-1]
             end = start + len(buf)
             if address <= end:
                 # The write may end inside the region: compare what both cover.
-                overlap = buf[address - start : address - start + len(data)]
-                if bytes(overlap) != data[: len(overlap)]:
-                    raise OverlapConflictError(
-                        address, sources[address - start], source
-                    )
-                tail = data[len(overlap) :]
-                buf += tail
-                sources += [source] * len(tail)
+                at = address - start
+                if buf[at : at + len(data)] != data[: len(buf) - at]:
+                    owner = sources[bisect.bisect_right(offsets, at) - 1]
+                    raise OverlapConflictError(address, owner, source)
+                if address + len(data) > end:
+                    offsets.append(len(buf))
+                    sources.append(source)
+                    buf += data[end - address :]
                 continue
-        regions.append((address, bytearray(data), [source] * len(data)))
-    return [(start, bytes(buf)) for start, buf, _ in regions]
+        regions.append((address, bytearray(data), [0], [source]))
+    return [(start, bytes(buf)) for start, buf, _, _ in regions]
 
 
 def region_name(address: int) -> PurePosixPath:
