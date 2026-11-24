@@ -1,7 +1,11 @@
 """InstallShield headered single-file packages (FSD §13a), unit tier, Wave 3."""
 
+import hashlib
+import os
 import struct
+import tracemalloc
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -149,3 +153,46 @@ def test_tc_sec_08_setup_names_outside_rejected(layout: str, tmp_path: Path):
     assert sorted(p.name for p in tmp_path.iterdir()) == ["x"]
     assert sorted(p.name for p in (tmp_path / "x").iterdir()) == ["in.pftw", "out"]
     assert files_under(out) == {"ok/inside.txt": b"inside", "last.txt": b"last"}
+
+
+MIB = 1 << 20
+
+
+def sha256_of(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        while block := f.read(MIB):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+@pytest.mark.parametrize(
+    "name,content,flags",
+    [
+        # Unobfuscated: inflate is fed the reader's full-size slices, the
+        # case that held 32 MiB per slice before NFR-SEC-11.
+        pytest.param(
+            "zeros.bin",
+            lambda: bytes(64 * MIB),
+            0,
+            marks=pytest.mark.xfail(strict=True, reason="NFR-SEC-11 not implemented"),
+        ),
+        ("random.bin", lambda: os.urandom(8 * MIB), M1024),
+    ],
+)
+def test_tc_sec_11_member_inflate_bounded(
+    name: str, content: Callable[[], bytes], flags: int, tmp_path: Path
+):
+    data = content()
+    expected = hashlib.sha256(data).hexdigest()
+    package = stream([Member(name, data, flags, deflated=True)])
+    del data
+    tracemalloc.start()
+    try:
+        problems, out = extract(tmp_path / "x", package)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert problems == []
+    assert sha256_of(out / name) == expected
+    assert peak <= MIB, f"{peak} bytes held"
