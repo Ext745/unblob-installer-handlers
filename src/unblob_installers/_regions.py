@@ -29,7 +29,8 @@ def assemble(writes: Iterable[tuple[int, bytes, int]]) -> list[tuple[int, bytes]
     """Merge (address, data, source id) writes into sorted contiguous regions.
 
     Identical overlapping writes are accepted; differing ones raise
-    OverlapConflictError naming both sources.
+    OverlapConflictError at the first differing byte, naming the write that
+    put it there and the one that differs.
     """
     # Each region keeps its sources as spans (offset in the region where a
     # source's bytes begin, source), not one entry per byte (NFR-SEC-10).
@@ -41,9 +42,12 @@ def assemble(writes: Iterable[tuple[int, bytes, int]]) -> list[tuple[int, bytes]
             if address <= end:
                 # The write may end inside the region: compare what both cover.
                 at = address - start
-                if buf[at : at + len(data)] != data[: len(buf) - at]:
-                    owner = sources[bisect.bisect_right(offsets, at) - 1]
-                    raise OverlapConflictError(address, owner, source)
+                covered = buf[at : at + len(data)]
+                if covered != data[: len(covered)]:
+                    # Name the write that put the first differing byte there.
+                    k = next(i for i, b in enumerate(covered) if b != data[i])
+                    owner = sources[bisect.bisect_right(offsets, at + k) - 1]
+                    raise OverlapConflictError(address + k, owner, source)
                 if address + len(data) > end:
                     offsets.append(len(buf))
                     sources.append(source)
