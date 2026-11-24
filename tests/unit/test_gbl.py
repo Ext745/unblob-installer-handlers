@@ -20,6 +20,7 @@ from tests.read_recorder import ReadRecorder
 from unblob_installers.gbl import (
     DECOMPRESSED_CAP,
     HEADER_TAG,
+    LZMA_MEMLIMIT,
     PROG,
     PROG_LZ4,
     PROG_LZMA,
@@ -162,11 +163,11 @@ def test_tc_gbl_08_overlapping_program_data(tmp_path: Path):
     assert files == {"0x00001000.bin": b"\x11" * 32 + b"\x33" * 16}
 
 
-def compressed(codec: str, size: int) -> bytes:
+def compressed(codec: str, size: int, dict_size: int | None = None) -> bytes:
     zeros = bytes(size)
     if codec == "lz4":
         return lz4.block.compress(zeros, store_size=False)
-    return lzma_alone(zeros)
+    return lzma_alone(zeros, dict_size)
 
 
 @pytest.mark.parametrize("codec", ["lz4", "lzma"])
@@ -184,10 +185,12 @@ def test_tc_sec_07_decompression_capped_per_tag(codec: str, tmp_path: Path):
         "0x10000000.bin": bytes(DECOMPRESSED_CAP),
     }
     # 16 MiB + 1: an extraction problem naming tag 2, nothing of it written,
-    # the other tag's region written as if it were absent; at most 33 MiB held
-    # (the decoders build the capped output, then copy it: 2 x cap + 1 MiB).
+    # the other tag's region written as if it were absent; at most 50 MiB held:
+    # the decoders build the capped output, then copy it, and LZMA also holds
+    # its dictionary, here the 16 MiB maximum NFR-SEC-09 admits (worst case).
     over = gbl(
-        other, prog(tag_id, 0x1000_0000, compressed(codec, DECOMPRESSED_CAP + 1))
+        other,
+        prog(tag_id, 0x1000_0000, compressed(codec, DECOMPRESSED_CAP + 1, 16 * MIB)),
     )
     tracemalloc.start()
     try:
@@ -195,7 +198,7 @@ def test_tc_sec_07_decompression_capped_per_tag(codec: str, tmp_path: Path):
         _, peak = tracemalloc.get_traced_memory()
     finally:
         tracemalloc.stop()
-    assert peak <= 2 * DECOMPRESSED_CAP + MIB, f"{peak} bytes held"
+    assert peak <= 2 * DECOMPRESSED_CAP + LZMA_MEMLIMIT + MIB, f"{peak} bytes held"
     problems = [r for r in reports if isinstance(r, ExtractionProblem)]
     assert [p.problem.split(":")[0] for p in problems] == [
         f"GBL tag 2 (0x{tag_id:08x})"
