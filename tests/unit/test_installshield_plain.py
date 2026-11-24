@@ -17,7 +17,6 @@ from tests.installshield_plain_image import (
     setup_exe,
     utf16,
 )
-from tests.read_recorder import ReadRecorder
 from unblob_installers.installshield_plain import (
     InstallShieldPlainExtractor,
     InstallShieldPlainHandler,
@@ -88,14 +87,18 @@ DECLINED = {
 
 @pytest.mark.parametrize("case", DECLINED)
 def test_tc_isw_08_malformed_overlays_declined(case: str):
+    # A plain File, not the ReadRecorder: this handler reads the PE through
+    # struct.unpack_from, which needs the buffer protocol (Python 3.12+ for a
+    # Python class). Its reads past the end are ruled out by _pe._unpack's
+    # bounds check; one that slipped through would raise struct.error, which
+    # the strict InvalidInputFormat expectation below fails on.
     data = DECLINED[case]()
-    with ReadRecorder(data) as file:
+    with File.from_bytes(data) as file:
         try:
             chunk = InstallShieldPlainHandler().calculate_chunk(file, 0)
         except InvalidInputFormat:
             chunk = None  # FR-COM-01: raising or returning no chunk declines
     assert chunk is None
-    assert not file.read_past_end, f"asked for byte {file.highest} of {file.size()}"
 
     # An ANSI third record whose length field is 12a ends the package after
     # record 2 (FR-ISW-09); the intact package is claimed whole.
@@ -109,11 +112,10 @@ def test_tc_isw_08_malformed_overlays_declined(case: str):
             + sum(len(ansi_record(*r[:3], str(len(r[3])), r[3])) for r in THREE[:2]),
         ),
     ):
-        with ReadRecorder(data) as file:
+        with File.from_bytes(data) as file:
             chunk = InstallShieldPlainHandler().calculate_chunk(file, 0)
         assert chunk is not None
         assert (chunk.start_offset, chunk.end_offset) == (0, end)
-        assert not file.read_past_end
 
 
 BAD_NAMES = ["..\\..\\evil.txt", "C:\\evil.txt", "\\\\server\\x"]

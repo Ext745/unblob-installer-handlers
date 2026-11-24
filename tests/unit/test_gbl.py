@@ -5,6 +5,7 @@ import lzma
 import struct
 import subprocess
 import sys
+import tracemalloc
 from pathlib import Path
 
 import lz4.block
@@ -183,11 +184,18 @@ def test_tc_sec_07_decompression_capped_per_tag(codec: str, tmp_path: Path):
         "0x10000000.bin": bytes(DECOMPRESSED_CAP),
     }
     # 16 MiB + 1: an extraction problem naming tag 2, nothing of it written,
-    # the other tag's region written as if it were absent.
-    reports, files = extract(
-        tmp_path / "over",
-        gbl(other, prog(tag_id, 0x1000_0000, compressed(codec, DECOMPRESSED_CAP + 1))),
+    # the other tag's region written as if it were absent; at most 33 MiB held
+    # (the decoders build the capped output, then copy it: 2 x cap + 1 MiB).
+    over = gbl(
+        other, prog(tag_id, 0x1000_0000, compressed(codec, DECOMPRESSED_CAP + 1))
     )
+    tracemalloc.start()
+    try:
+        reports, files = extract(tmp_path / "over", over)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert peak <= 2 * DECOMPRESSED_CAP + MIB, f"{peak} bytes held"
     problems = [r for r in reports if isinstance(r, ExtractionProblem)]
     assert [p.problem.split(":")[0] for p in problems] == [
         f"GBL tag 2 (0x{tag_id:08x})"

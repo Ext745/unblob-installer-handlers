@@ -10,10 +10,10 @@ things are kept:
   that a handler reads a bounded window, not the whole input.
 
 find() is passed through unrecorded: its end argument is a search bound, not a
-read. So is buffer-protocol access (struct.unpack_from on the file, as the PE
-helpers do): that cannot read past the end without raising, and those helpers
-bounds-check first. Handlers that only use seek/read/tell or slicing are fully
-covered.
+read. Handlers that only use seek/read/tell or slicing are fully covered.
+A handler that passes the file to struct.unpack_from (the PE helpers) cannot
+take a ReadRecorder: a Python class gets the buffer protocol only from Python
+3.12 on, and the package supports 3.10. Test those with a plain File.
 """
 
 from types import TracebackType
@@ -58,9 +58,6 @@ class ReadRecorder:
         start = key.start or 0
         self._asked(start, self._size if key.stop is None else key.stop)
         return self._file[key]
-
-    def __buffer__(self, flags: int) -> memoryview:
-        return memoryview(self._file)
 
     def __getattr__(self, name: str):
         # seek, tell, find, ... go to the real File unchanged.
