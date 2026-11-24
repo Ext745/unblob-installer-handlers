@@ -139,11 +139,11 @@ def header_and_end_only(stream: bytes) -> bytes:
 def test_tc_gbl_02_malformed_declined(damage):
     stream = standard_tags()
     with ReadRecorder(stream) as file:  # control: the undamaged stream is claimed
-        chunk = GblHandler().calculate_chunk(file, 0)
+        chunk = GblHandler().calculate_chunk(file.as_file(), 0)
     assert chunk is not None
     assert chunk.end_offset == len(stream)
     with ReadRecorder(damage(stream)) as file, pytest.raises(InvalidInputFormat):
-        GblHandler().calculate_chunk(file, 0)
+        GblHandler().calculate_chunk(file.as_file(), 0)
     assert not file.read_past_end
 
 
@@ -303,5 +303,5 @@ def test_tc_sec_03b_gbl_declined_within_the_file(case: str):
         "tag cut by the input end": stream[: offset + 8],
     }[case]
     with ReadRecorder(data) as file, pytest.raises(InvalidInputFormat):
-        GblHandler().calculate_chunk(file, 0)
+        GblHandler().calculate_chunk(file.as_file(), 0)
     assert not file.read_past_end, f"asked for byte {file.highest} of {file.size()}"

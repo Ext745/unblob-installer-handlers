@@ -17,6 +17,7 @@ take a ReadRecorder: a Python class gets the buffer protocol only from Python
 """
 
 from types import TracebackType
+from typing import cast
 
 from unblob.file_utils import File
 
@@ -30,6 +31,10 @@ class ReadRecorder:
 
     def __enter__(self) -> "ReadRecorder":
         return self
+
+    def as_file(self) -> File:
+        """Return this recorder typed as the File that calculate_chunk takes."""
+        return cast("File", self)
 
     def __exit__(
         self,

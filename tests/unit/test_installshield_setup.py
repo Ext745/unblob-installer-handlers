@@ -24,8 +24,9 @@ TWO = [*ONE, Member("two.txt", b"second member\r\n")]
 
 def chunk_of(data: bytes):
     with ReadRecorder(data) as file:
-        chunk = InstallShieldSetupHandler().calculate_chunk(file, 0)
+        chunk = InstallShieldSetupHandler().calculate_chunk(file.as_file(), 0)
     assert not file.read_past_end
+    assert chunk is not None
     return chunk
 
 
@@ -79,7 +80,7 @@ def test_tc_isw_03_malformed_packages_declined(case: str):
 
     data = MALFORMED[case]()
     with ReadRecorder(data) as file, pytest.raises(InvalidInputFormat):
-        InstallShieldSetupHandler().calculate_chunk(file, 0)
+        InstallShieldSetupHandler().calculate_chunk(file.as_file(), 0)
     assert not file.read_past_end, f"asked for byte {file.highest} of {file.size()}"
 
 

@@ -9,6 +9,7 @@ import struct
 from pathlib import Path
 
 import pytest
+from unblob.report import UnknownChunkReport
 
 from tests.conftest import INPUTS, chunks, run_unblob
 from tests.gbl_image import (
@@ -98,7 +99,7 @@ def test_tc_gbl_03_chunk_takes_the_padding_only(
         for t in result.results
         if t.task.path == sample
         for r in t.reports
-        if r.__class__.__name__ == "UnknownChunkReport"
+        if isinstance(r, UnknownChunkReport)
     ]
     assert unknown == [(end, sample.stat().st_size)]
 

@@ -8,6 +8,7 @@ import random
 from pathlib import Path
 
 import pytest
+from unblob.report import UnknownChunkReport
 
 from tests.conftest import INPUTS, chunks, run_unblob
 from tests.cyacd_image import (
@@ -108,7 +109,7 @@ def test_tc_cya_03_chunk_ends_after_the_last_line(
         for t in result.results
         if t.task.path == sample
         for r in t.reports
-        if r.__class__.__name__ == "UnknownChunkReport"
+        if isinstance(r, UnknownChunkReport)
     ]
     assert unknown == [(len(data), sample.stat().st_size)]
 

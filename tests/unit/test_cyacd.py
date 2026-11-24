@@ -200,5 +200,5 @@ def test_tc_sec_03_cyacd_declined_within_the_file(kind: str):
         handler = Cyacd2Handler()
     assert len(data) == KIB
     with ReadRecorder(data) as file, pytest.raises(InvalidInputFormat):
-        handler.calculate_chunk(file, 0)
+        handler.calculate_chunk(file.as_file(), 0)
     assert not file.read_past_end, f"asked for byte {file.highest} of {file.size()}"

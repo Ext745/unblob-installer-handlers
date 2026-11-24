@@ -68,7 +68,7 @@ def tags_of(gbl: bytes) -> list[tuple[int, int, int]]:
 
 
 def main(payload_path: str, outdir: str) -> None:
-    import pygbl.gbl3 as g  # noqa: PLC0415 - oracle, only where fixtures are built
+    import pygbl.gbl3 as g  # noqa: PLC0415  # pyright: ignore[reportMissingImports] - oracle, only where fixtures are built
 
     payload = Path(payload_path).read_bytes()
     assert len(payload) == 4096

@@ -9,6 +9,7 @@ import random
 from pathlib import Path
 
 import pytest
+from unblob.report import UnknownChunkReport
 
 from tests.conftest import INPUTS, chunks, run_unblob
 from tests.installshield_setup_image import classic_members, stream_members
@@ -63,7 +64,7 @@ def test_tc_isw_02_chunk_ends_at_the_last_member(tmp_path: Path):
         for t in result.results
         if t.task.path == sample
         for r in t.reports
-        if r.__class__.__name__ == "UnknownChunkReport"
+        if isinstance(r, UnknownChunkReport)
     ]
     assert unknown == [(len(package), len(package) + 4096)]
 

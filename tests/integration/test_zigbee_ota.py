@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 
 import pytest
+from unblob.report import UnknownChunkReport
 
 from tests.conftest import chunks, run_unblob
 from tests.zigbee_ota_image import (
@@ -49,7 +50,7 @@ def test_tc_zota_02_chunk_ends_at_total_image_size(payload: bytes, tmp_path: Pat
         for t in result.results
         if t.task.path == sample
         for r in t.reports
-        if r.__class__.__name__ == "UnknownChunkReport"
+        if isinstance(r, UnknownChunkReport)
     ]
     assert unknown == [(len(ota), len(ota) + 4096)]
 
