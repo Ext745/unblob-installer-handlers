@@ -24,6 +24,7 @@ from unblob.file_utils import (
 from unblob.models import ExtractError, Extractor, ExtractResult, Reference
 from unblob.report import ExtractionProblem
 
+from ._extract import require_whole_chunk
 from ._pe_headers import PEHeaders
 from ._pe_payload import PEPayload
 
@@ -94,6 +95,10 @@ class NSISExtractor(Extractor):
         return self.command.get_dependencies()
 
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        # A cut or altered installer raises ExtractError, not a parse error (FR-COM-03).
+        from .nsis import NSISHandler  # noqa: PLC0415 - nsis imports this module
+
+        require_whole_chunk(NSISHandler().calculate_chunk, inpath)
         with File.from_path(inpath) as file:
             # the carved chunk starts with the PE
             headers = PEHeaders.parse(file, 0)

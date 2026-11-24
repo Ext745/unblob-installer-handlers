@@ -61,6 +61,8 @@ from unblob.models import (
 )
 from unblob.report import ExtractionProblem
 
+from ._extract import require_whole_chunk
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -323,6 +325,8 @@ def _member_path(name: str | bytes, index: int) -> Path | None:
 
 class PftwExtractor(Extractor):
     def extract(self, inpath: Path, outdir: Path) -> ExtractResult | None:
+        # A cut or altered package raises ExtractError, not partial output (FR-COM-03).
+        require_whole_chunk(InstallShieldSetupHandler().calculate_chunk, inpath)
         fs = FileSystem(outdir)
         with File.from_path(inpath) as file:
             parser = PftwParser(file)
