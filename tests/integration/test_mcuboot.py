@@ -66,7 +66,12 @@ def test_tc_mcb_06_report_entry_carries_signed(tmp_path: Path):
     assert prot_size == 0
     body = image[: hdr_size + img_size]
     # The fixture's own TLV area (SHA-256 only) plus an ED25519 signature TLV.
-    tlvs = image[hdr_size + img_size + 4 :] + struct.pack("<HH", 0x24, 64) + bytes(64)
+    area = image[hdr_size + img_size :]
+    # standard.bin's TLV area: info header, one SHA-256 TLV, nothing after it.
+    assert area[:4] == struct.pack("<HH", 0x6907, 4 + 4 + 32)
+    assert struct.unpack_from("<HH", area, 4) == (0x10, 32)
+    assert len(area) == 40
+    tlvs = area[4:] + struct.pack("<HH", 0x24, 64) + bytes(64)
     signed = tmp_path / "signed.bin"
     signed.write_bytes(body + struct.pack("<HH", 0x6907, 4 + len(tlvs)) + tlvs)
 

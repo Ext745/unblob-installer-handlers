@@ -1,12 +1,15 @@
 """Setup Factory against the SF10 build in the real-file store (FSD §8, §17)."""
 
 import hashlib
+import importlib
 import random
 import shutil
+import struct
 import subprocess
 from pathlib import Path
 
 import pytest
+from unblob.models import File
 
 from tests.conftest import chunks, run_unblob, tree
 
@@ -145,3 +148,36 @@ def test_tc_sf_08_sf8_1_installer_equals_sfextract(realfiles: Path, tmp_path: Pa
 
 def test_tc_sf_09_sf9_2_installer_equals_sfextract(realfiles: Path, tmp_path: Path):
     check_matches_sfextract(realfiles, tmp_path, "sf9.2.0.0-cleanmem_setup.exe")
+
+
+# NFR-SEC-05: the LZMA scripts of real SF 8 and 9 installers declare 8 and
+# 16 MiB dictionaries; under the 64 MiB cap they are still claimed. (SF 9.1 and
+# 9.2 scripts are LZMA2, outside the alone-format cap.)
+LZMA_SCRIPTS = {
+    "sf8.1.1004.0-CSFireMonitor3Setup.exe": 8,
+    "sf8.2.1.0-Context_Menu_Enhancer.exe": 8,
+    "sf8.2.1.0-setup.exe": 8,
+    "sf9.0.2.0-setup.exe": 16,
+}
+
+
+@pytest.mark.parametrize("name", LZMA_SCRIPTS)
+def test_tc_sec_05_real_sf8_sf9_still_claimed(
+    realfiles: Path, name: str, monkeypatch: pytest.MonkeyPatch
+):
+    setup_factory = importlib.import_module("unblob_installers.setup_factory")
+    declared: list[int] = []
+    decompress = setup_factory.decompress
+
+    def spy(data: bytes):
+        if data[:2] == b"\x5d\x00":  # .lzma alone header: dictionary size at 1
+            declared.append(struct.unpack_from("<I", data, 1)[0])
+        return decompress(data)
+
+    monkeypatch.setattr(setup_factory, "decompress", spy)
+    source = realfiles / INDEX / name
+    with File.from_path(source) as file:
+        chunk = setup_factory.SetupFactoryHandler().calculate_chunk(file, 0)
+    assert declared == [LZMA_SCRIPTS[name] << 20]
+    assert chunk is not None
+    assert (chunk.start_offset, chunk.end_offset) == (0, source.stat().st_size)

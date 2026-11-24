@@ -133,7 +133,12 @@ def test_tc_hex_03_address_records_without_data_are_not_claimed(
 
 def test_tc_hex_03_eof_record_not_joined_to_a_later_chunk():
     text = b":00000001FF\n" + FIXTURE
-    assert ihex().chunk_end(text, 0) is None
+    colons = [i for i, byte in enumerate(text) if byte == ord(":")]
+    assert colons[:2] == [0, 12]
+    # Nothing before the fixture claims anything, so the EOF record cannot be
+    # joined to it; the fixture's chunk runs to the end. Every later `:` lies
+    # inside that chunk, where unblob starts no other.
+    assert [ihex().chunk_end(text, i) for i in colons if i < 12] == [None]
     assert ihex().chunk_end(text, 12) == len(text)
 
 

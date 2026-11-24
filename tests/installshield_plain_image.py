@@ -38,6 +38,21 @@ def minimal_pe() -> bytearray:
     return pe
 
 
+def pe_with_sections(count: int) -> bytes:
+    """Build a PE32 declaring count sections, with their all-zero table.
+
+    Nothing follows the headers: no section data and no overlay.
+    """
+    optional = 0x58
+    table = optional + 224
+    size_of_headers = -(-(table + 40 * count) // 0x200) * 0x200
+    pe = bytearray(size_of_headers)
+    pe[: 0x58 + 224] = minimal_pe()[: 0x58 + 224]
+    struct.pack_into("<H", pe, 0x46, count)  # NumberOfSections
+    struct.pack_into("<I", pe, optional + 60, size_of_headers)
+    return bytes(pe)
+
+
 def with_certificate(pe_and_package: bytes, gap: bytes, certificate: bytes) -> bytes:
     """Append gap + certificate and point the security directory at it."""
     data = bytearray(pe_and_package + gap)
