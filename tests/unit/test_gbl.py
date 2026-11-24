@@ -205,6 +205,25 @@ def test_tc_sec_07_decompression_capped_per_tag(codec: str, tmp_path: Path):
     ]
     assert files == {"0x00000000.bin": b"\x5a" * 64}
 
+    # The bound holds for any input: the same over-cap tag followed by 64 MiB
+    # of filler inside the tag adds nothing but the input itself, which the
+    # extractor reads whole (no copy of the tag, no copy of its unread data).
+    stream = compressed(codec, DECOMPRESSED_CAP + 1, 16 * MIB)
+    big = gbl(other, prog(tag_id, 0x1000_0000, stream + bytes(64 * MIB)))
+    tracemalloc.start()
+    try:
+        reports, files = extract(tmp_path / "big", big)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    bound = 2 * DECOMPRESSED_CAP + LZMA_MEMLIMIT + MIB + len(big)
+    assert peak <= bound, f"{peak} bytes held for a {len(big)}-byte input"
+    problems = [r for r in reports if isinstance(r, ExtractionProblem)]
+    assert [p.problem.split(":")[0] for p in problems] == [
+        f"GBL tag 2 (0x{tag_id:08x})"
+    ]
+    assert files == {"0x00000000.bin": b"\x5a" * 64}
+
 
 # NFR-SEC-09 runs the extractor in a child process whose address space is
 # limited to 1 GiB, so a decoder allocating a declared 4 GiB dictionary fails

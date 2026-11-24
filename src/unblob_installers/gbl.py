@@ -50,6 +50,9 @@ DECOMPRESSED_CAP = 16 * 1024 * 1024
 # admits a 16 MiB dictionary; liblzma checks it before allocating.
 LZMA_MEMLIMIT = 17 * 1024 * 1024
 _CRC_BLOCK = 1 << 20
+# LZMA input is fed in pieces: when the output cap stops the decoder, it keeps
+# a copy of the input it has not read, so one piece bounds that copy.
+_LZMA_STEP = 1 << 20
 
 
 class GblReport(Report):
@@ -123,44 +126,55 @@ def gbl_info(file: File, start: int, size: int) -> GblInfo:
     )
 
 
-def _decompress(tag_id: int, data: bytes) -> bytes:
-    """Decompress one LZ4 or LZMA tag's data; ValueError when over the cap or corrupt."""
-    if tag_id == PROG_LZ4:
-        try:
-            out = lz4.block.decompress(data, uncompressed_size=DECOMPRESSED_CAP + 1)
-        except lz4.block.LZ4BlockError as exc:
+def _lz4(data: memoryview) -> bytes:
+    """One raw LZ4 block, decoded into at most the cap plus the detecting byte."""
+    try:
+        return lz4.block.decompress(data, uncompressed_size=DECOMPRESSED_CAP + 1)
+    except lz4.block.LZ4BlockError as exc:
+        raise ValueError(
+            f"LZ4 data does not decompress within the cap: {exc}"
+        ) from None
+
+
+def _lzma(data: memoryview) -> bytes | bytearray:
+    """One .lzma alone stream, fed a piece at a time, stopped past the cap."""
+    decoder = lzma.LZMADecompressor(format=lzma.FORMAT_ALONE, memlimit=LZMA_MEMLIMIT)
+    buf = bytearray()
+    try:
+        for start in range(0, len(data), _LZMA_STEP):
+            piece = data[start : start + _LZMA_STEP]
+            buf += decoder.decompress(piece, max_length=DECOMPRESSED_CAP + 1 - len(buf))
+            if len(buf) > DECOMPRESSED_CAP or decoder.eof:
+                break
+    except lzma.LZMAError as exc:
+        if "memory usage limit" in str(exc).lower():  # NFR-SEC-09
             raise ValueError(
-                f"LZ4 data does not decompress within the cap: {exc}"
+                f"LZMA dictionary needs more than {LZMA_MEMLIMIT} bytes"
+                " of decoder memory"
             ) from None
-    else:
-        decoder = lzma.LZMADecompressor(
-            format=lzma.FORMAT_ALONE, memlimit=LZMA_MEMLIMIT
-        )
-        try:
-            out = decoder.decompress(data, max_length=DECOMPRESSED_CAP + 1)
-        except lzma.LZMAError as exc:
-            if "memory usage limit" in str(exc).lower():  # NFR-SEC-09
-                raise ValueError(
-                    f"LZMA dictionary needs more than {LZMA_MEMLIMIT} bytes"
-                    " of decoder memory"
-                ) from None
-            raise ValueError(f"LZMA data is corrupt: {exc}") from None
-        if len(out) <= DECOMPRESSED_CAP and not decoder.eof:
-            raise ValueError("LZMA stream is truncated")
-    if len(out) > DECOMPRESSED_CAP:
+        raise ValueError(f"LZMA data is corrupt: {exc}") from None
+    if len(buf) <= DECOMPRESSED_CAP and not decoder.eof:
+        raise ValueError("LZMA stream is truncated")
+    return buf
+
+
+def _decompress(tag_id: int, data: memoryview) -> bytes:
+    """Decompress one LZ4 or LZMA tag's data; ValueError when over the cap or corrupt."""
+    out = _lz4(data) if tag_id == PROG_LZ4 else _lzma(data)
+    if len(out) > DECOMPRESSED_CAP:  # NFR-SEC-07
         raise ValueError(f"decompresses to more than {DECOMPRESSED_CAP} bytes")
-    return out
+    return bytes(out)
 
 
-def _program_write(tag: Tag, body: bytes) -> tuple[int, bytes, int]:
+def _program_write(tag: Tag, body: memoryview) -> tuple[int, bytes, int]:
     """(address, program data, tag index) of a program-data tag; ValueError if unusable."""
     if len(body) < 4:
         raise ValueError("has no address")
     address = struct.unpack_from("<I", body)[0]
-    payload = body[4:]
+    payload = body[4:]  # a view: the tag is not copied before decoding
     if tag.tag_id in (PROG_LZ4, PROG_LZMA):
-        payload = _decompress(tag.tag_id, payload)
-    return address, payload, tag.index
+        return address, _decompress(tag.tag_id, payload), tag.index
+    return address, bytes(payload), tag.index
 
 
 class GblExtractor(Extractor):
@@ -172,7 +186,7 @@ class GblExtractor(Extractor):
         writes: list[tuple[int, bytes, int]] = []
         reports: list[Report] = []
         for tag in info.tags[1:-1]:
-            body = data[tag.offset : tag.offset + tag.length]
+            body = memoryview(data)[tag.offset : tag.offset + tag.length]
             if encrypted or tag.tag_id not in PROGRAM_DATA:
                 (outdir / f"tag_0x{tag.tag_id:08x}_{tag.index}.bin").write_bytes(body)
                 continue
