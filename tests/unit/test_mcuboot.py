@@ -58,6 +58,9 @@ def test_tc_mcb_06_signed_only_with_a_signature_tlv():
     counter_only = info(with_protected_area(FIXTURE, [sec_cnt]))
     assert (counter_only.signed, counter_only.encrypted) == (False, False)
     assert 0x50 in counter_only.tlv_types  # the protected area was read
+    # Header flags never make an image signed: every bit but the encryption ones.
+    flagged = info(with_flags(FIXTURE, 0xFFFFFFF3))
+    assert (flagged.signed, flagged.encrypted) == (False, False)
 
 
 def test_tc_mcb_07_encrypted_follows_the_flag_bits():

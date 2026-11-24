@@ -2,6 +2,7 @@
 
 import re
 import shutil
+import struct
 import subprocess
 from pathlib import Path
 
@@ -57,6 +58,29 @@ def test_tc_mcb_05_report_version_load_address_flags(tmp_path: Path):
         0,
         0,
     )
+
+
+def test_tc_mcb_06_report_entry_carries_signed(tmp_path: Path):
+    image = FIXTURE.read_bytes()
+    hdr_size, prot_size, img_size = struct.unpack_from("<HHI", image, 8)
+    assert prot_size == 0
+    body = image[: hdr_size + img_size]
+    # The fixture's own TLV area (SHA-256 only) plus an ED25519 signature TLV.
+    tlvs = image[hdr_size + img_size + 4 :] + struct.pack("<HH", 0x24, 64) + bytes(64)
+    signed = tmp_path / "signed.bin"
+    signed.write_bytes(body + struct.pack("<HH", 0x6907, 4 + len(tlvs)) + tlvs)
+
+    seen = []
+    for source in (FIXTURE, signed):
+        (chunk,) = mcuboot_chunks(run_unblob(source, tmp_path / source.stem))
+        assert (chunk.start_offset, chunk.end_offset) == (0, source.stat().st_size)
+        (report,) = [
+            r.model_dump()
+            for r in chunk.extraction_reports
+            if r.__typename__ == "MCUbootImageReport"
+        ]
+        seen.append((report["signed"], report["encrypted"]))
+    assert seen == [(False, False), (True, False)]
 
 
 def test_tc_mcb_08_encrypted_image_written_as_ciphertext(

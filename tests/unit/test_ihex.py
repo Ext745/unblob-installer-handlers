@@ -126,7 +126,15 @@ def test_tc_hex_03_address_records_without_data_are_not_claimed(
     records: list[bytes],
 ):
     text = b"\n".join([*records, record(0x01, 0, b"")]) + b"\n"
+    colons = [i for i, byte in enumerate(text) if byte == ord(":")]
+    assert len(colons) == len(records) + 1
+    assert [ihex().chunk_end(text, i) for i in colons] == [None] * len(colons)
+
+
+def test_tc_hex_03_eof_record_not_joined_to_a_later_chunk():
+    text = b":00000001FF\n" + FIXTURE
     assert ihex().chunk_end(text, 0) is None
+    assert ihex().chunk_end(text, 12) == len(text)
 
 
 def test_tc_hex_03_control_one_data_record_is_claimed():
