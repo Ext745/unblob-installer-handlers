@@ -2,9 +2,11 @@
 
 How to install the handler plugin next to unblob and use it.
 
-The plugin adds nine handlers to unblob 26.6.4: four for MCU firmware
-containers (UF2, Intel HEX, DfuSe, MCUboot) and five for Windows installers
-(InstallShield file and set, Inno Setup, Setup Factory, WiX/Burn). unblob
+The plugin adds sixteen handlers to unblob 26.6.4 (the table in §3): eight
+for MCU firmware containers (UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA,
+Silicon Labs GBL, `.cyacd` and `.cyacd2`) and eight for Windows installers
+(InstallShield cabinet, cabinet set, single-file and plain setup packages,
+Inno Setup, Setup Factory, WiX/Burn, NSIS). unblob
 finds them, carves their chunks and recurses into what they extract — there
 is no separate tool to learn.
 
@@ -147,12 +149,24 @@ fill bytes, so a gap between regions is a gap between files. Addresses are
 | Inno Setup | the installer's files as `innoextract -e` writes them, e.g. `app/firmware.bin` |
 | Setup Factory | the installer's files as `sfextract` writes them, under folder variables such as `%AppFolder%/firmware.bin` |
 | WiX/Burn | `u0.cab` (UX container) and `a0.cab`, `a1.cab` … (attached containers), byte-identical to the input ranges; unblob's CAB handler then unpacks each |
+| NSIS | the installer's files as `7z x` writes them (FR-NSIS-06) |
+| Zigbee OTA | `tag_0x<tag ID, 4 hex digits>_<index>.bin` per sub-element, its data without the 6-byte sub-element header; the index counts sub-elements from 0 in file order, e.g. `tag_0x0000_0.bin` for the upgrade image. unblob then looks inside each (a Silicon Labs upgrade image is often a GBL) |
+| GBL | unencrypted: `0x<address>.bin` per region of program data, LZ4 and LZMA tags decompressed. Every other tag except header and end tag (application info, bootloader, SE upgrade, metadata, signature, certificate …) as `tag_0x<tag ID, 8 hex digits>_<index>.bin` with its data unchanged; the index counts tags from 0 in file order, the header being 0. Encrypted: only the `tag_` files, nothing decrypted |
+| `.cyacd` | `array_0x<array ID, 2 hex digits>/0x<byte offset>.bin` per run of contiguous rows, the offset being row number × row length |
+| `.cyacd2` | `0x<address>.bin` per region, as for Intel HEX; with an `@EIV` line the data is written as stored, not decrypted |
 
-**MCUboot metadata** is in the report, not in a file: run with `--report` and
-look for the `MCUbootImageReport` entry, which gives `version`
-(`major.minor.revision+build`), `load_address`, `flags`, `signed` and
-`encrypted`. `signed: true` means a signature TLV is present — the plugin
-does not verify it (FSD §18).
+**Header metadata** is in the report, not in a file: run with `--report` and
+look for these entries.
+
+| Entry | Format | Fields |
+|---|---|---|
+| `MCUbootImageReport` | MCUboot | `version` (`major.minor.revision+build`), `load_address`, `flags`, `signed`, `encrypted` |
+| `ZigbeeOtaReport` | Zigbee OTA | `manufacturer_code`, `image_type`, `file_version`, `stack_version`, `header_string` |
+| `GblReport` | GBL, encrypted only | `encrypted: true`, `signed` (header bit 8) |
+| `CyacdReport` | `.cyacd`, `.cyacd2` | `silicon_id`, `silicon_revision`; for `.cyacd2` also `app_id`, `product_id`, `appinfo_address`, `appinfo_length`, `encrypted` |
+
+`signed: true` means a signature is present — the plugin does not verify it
+(FSD §18).
 
 ## 5. Limitations
 
