@@ -15,7 +15,7 @@ so there is no separate tool to learn.
 | `installshield` | InstallShield version 5 `data1.cab` | the cabinet's files (`unshield`) |
 | `installshield_set` | a directory holding an InstallShield cabinet set, version 5 or 6 and later | the set's files (`unshield`) |
 | `installshield_setup` | the package a single-file InstallShield `setup.exe` carries (`InstallShield` and `ISSetupStream` layouts) | its members (MSI, cabinets, `Setup.ini`, …) de-obfuscated and inflated, unpacked further by unblob |
-| `inno` | Inno Setup 5.x–7.1 installers | the installer's files (`innoextract`) |
+| `inno` | Inno Setup 5.1.5–7.1 installers | the installer's files (`innoextract`) |
 | `setup_factory` | Setup Factory 7–10 installers | the installer's files (`sfextract`) |
 | `wix_burn` | WiX Burn bundles | the UX and attached containers as `.cab`, unpacked further by unblob |
 | `cyacd` | Cypress `.cyacd` (PSoC 3/4/5LP bootloader) | per flash array, one `.bin` per run of contiguous rows at row number × row length; silicon ID in unblob's report |

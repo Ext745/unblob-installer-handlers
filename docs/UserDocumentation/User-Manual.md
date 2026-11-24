@@ -113,7 +113,7 @@ unblob -e out/ --report report.json updater.exe
 | `installshield_set` | a directory holding a cabinet set (`data1.hdr` and/or `data1.cab` … `dataN.cab`), version 5 or 6 and later |
 | `installshield_setup` | the `InstallShield\0` or `ISSetupStream\0` package after a single-file `setup.exe` stub, from its signature to the end of its last member |
 | `installshield_plain` | a PE whose overlay holds an ANSI or UTF-16 plain InstallShield package, from the `MZ` to the end of the last file (through the certificate table when only alignment bytes lie between) |
-| `inno` | a PE carrying Inno Setup 5.x–7.1 setup data |
+| `inno` | a PE carrying Inno Setup 5.1.5–7.1 setup data |
 | `setup_factory` | a PE carrying a Setup Factory 7–10 overlay |
 | `wix_burn` | a PE with a `.wixburn` section |
 | `cyacd` | a `.cyacd` header line (12 hex digits) followed by checksummed rows, through the last valid row |
