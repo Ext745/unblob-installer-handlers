@@ -138,3 +138,46 @@ def test_tc_gbl_05_other_tags_written_raw(tmp_path: Path):
     assert {p.name: p.read_bytes() for p in out.iterdir()} == expected
     assert expected[f"tag_0x{METADATA:08x}_2.bin"] == METADATA_BYTES
     assert expected[f"tag_0x{SIGNATURE:08x}_3.bin"] == SIGNATURE_BYTES
+
+
+ENCRYPTION_INIT = 0xFA0606FA
+ENCRYPTED_PROG = 0xF90707F9
+
+
+@pytest.mark.parametrize(
+    "header_type,signed", [(0x1, False), (0x101, True)], ids=["unsigned", "signed"]
+)
+def test_tc_gbl_06_encrypted_written_raw_with_report(
+    header_type: int, signed: bool, tmp_path: Path
+):
+    gbl = fixture("encrypted.gbl")
+    tags = unpadded(gbl)
+    assert struct.unpack_from("<II", tags, 8) == (0x03000000, 0x1)
+    # Header bit 0: encrypted; bit 8: signed (FSD §13d).
+    tags = recrc(tags[:12] + struct.pack("<I", header_type) + tags[16:])
+    sample = tmp_path / "encrypted.gbl"
+    sample.write_bytes(tags + gbl[len(tags) :])
+    result = run_unblob(sample, tmp_path / "x", max_depth=1)
+
+    (chunk,) = gbl_chunks(result)
+    assert (chunk.start_offset, chunk.end_offset) == (0, len(gbl))  # FR-GBL-03
+    # The GblReport alone: no error report beside it.
+    assert [r.model_dump() for r in chunk.extraction_reports] == [
+        {"__typename__": "GblReport", "encrypted": True, "signed": signed}
+    ]
+
+    stored = tags_of(tags)
+    assert [t[0] for t in stored] == [
+        HEADER_TAG,
+        ENCRYPTION_INIT,
+        *[ENCRYPTED_PROG] * 4,
+        END_TAG,
+    ]
+    # Every tag but header and end written raw; no address-range file.
+    expected = {
+        f"tag_0x{tag_id:08x}_{index}.bin": tags[offset : offset + length]
+        for index, (tag_id, offset, length) in enumerate(stored)
+        if index not in (0, len(stored) - 1)
+    }
+    out = extracted(tmp_path / "x")
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == expected
