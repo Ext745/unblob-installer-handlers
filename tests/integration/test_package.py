@@ -44,6 +44,13 @@ DOC_NAMES = [
     "Setup Factory",
     "WiX Burn bundle",
     "InstallShield multi-volume set",
+    "Zigbee OTA upgrade file",
+    "Silicon Labs GBL",
+    "Cypress .cyacd",
+    "Infineon .cyacd2",
+    "NSIS installer",
+    "InstallShield PackageForTheWeb",
+    "InstallShield single-file setup.exe (plain layouts)",
 ]
 
 

@@ -50,8 +50,14 @@ def test_tc_com_03_tool_exit_nonzero_fails_extraction(
 ):
     failing_tool(tmp_path / "bin", COMMANDS[name])
     monkeypatch.setenv("PATH", f"{tmp_path / 'bin'}:{Path('/usr/bin')}:{Path('/bin')}")
-    sample = tmp_path / "data1.cab"
-    sample.write_bytes(b"input the stub never reads")
+    # A valid sample where one is committed, so the stub is what fails (the
+    # nsis extractor checks its input before running 7z).
+    sample = tmp_path / (COMMITTED[name].name if name in COMMITTED else "data1.cab")
+    sample.write_bytes(
+        COMMITTED[name].read_bytes()
+        if name in COMMITTED
+        else b"input the stub never reads"
+    )
     check_failed_extraction_raises(name, sample, tmp_path)
 
 

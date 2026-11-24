@@ -16,14 +16,19 @@ from unblob.report import ErrorReport
 
 from tests.conftest import chunks, run_unblob
 from tests.samples import PATTERN_BYTES, handler
+from unblob_installers import nsis
 
 RANDOM_LEN = 4096
+# Text formats recognised only at a line start (FR-CYA-01, FR-CYA-10).
+LINE_FORMATS = {"cyacd", "cyacd2"}
 
 
 def check_false_candidate_declined(name: str, sample: Path, tmp_path: Path) -> None:
     """FR-COM-01: pattern bytes, random bytes, then a real sample later on."""
     rng = random.Random(1701)  # noqa: S311 - fixed test data, not cryptography
     decoy = PATTERN_BYTES[name] + rng.randbytes(RANDOM_LEN)
+    if name in LINE_FORMATS:  # their header must be a line of its own
+        decoy += b"\n"
     combined = tmp_path / f"decoy-then-{sample.name}"
     combined.write_bytes(decoy + sample.read_bytes())
 
@@ -70,6 +75,9 @@ def check_failed_extraction_raises(name: str, inpath: Path, tmp_path: Path) -> N
     outdir = tmp_path / "out"
     outdir.mkdir()
     extractor = handler(name).EXTRACTOR
+    if name == "nsis":  # the nsis handler's extractor comes with its payload
+        (payload,) = nsis.PAYLOADS
+        extractor = payload.extractor
     assert extractor is not None
     with pytest.raises(ExtractError) as raised:
         extractor.extract(inpath, outdir)
