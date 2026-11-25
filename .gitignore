@@ -7,3 +7,4 @@ dist/
 .devcontainer/.env
 test-results/
 unblob.log
+.claude/
