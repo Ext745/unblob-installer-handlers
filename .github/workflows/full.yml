@@ -1,0 +1,41 @@
+name: full suite
+
+# Every tier (unit, integration, real-file, journey, and TC-CON-02's re-run
+# under Python 3.10 and 3.14), about 22 minutes, started by hand before a gate
+# check:  gh workflow run full.yml --ref main
+# Its JUnit report is kept as artifact junit-<sha>; plan statuses are recorded
+# from it (docs/Method/standards/testing.md, Recording results). Pushes get
+# only the fast tiers (ci.yml).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench             # one job at a time on the runner next to the bench
+  cancel-in-progress: false
+
+jobs:
+  full:
+    runs-on: [self-hosted, testbench]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Fresh venv with unblob 26.6.4 and the pinned dev tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/python -c "import importlib.metadata as m; print('unblob', m.version('unblob'))"
+
+      - name: Test suite (all tiers)
+        run: .venv/bin/pytest -q --junitxml=test-results/ci.xml
+
+      - name: Keep the JUnit report for plan_status.py
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: junit-${{ github.sha }}
+          path: test-results/ci.xml
+          retention-days: 90

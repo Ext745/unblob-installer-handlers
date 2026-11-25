@@ -1,11 +1,13 @@
 name: lint + unit tests
 
 # Every job runs on the project's own runner (.devcontainer); there are no
-# hosted-runner minutes for this private repo. The job runs the whole suite
-# (unit, integration, real-file, journey) once per change and keeps its JUnit
-# report as an artifact: plan statuses are recorded from it (plan_status.py),
-# so no separate local run is needed. Pushes touching only the plan, gates,
-# reviews or docs skip it; no test reads those paths.
+# hosted-runner minutes for this private repo. Every push gets the fast
+# tiers: lint, types, unit and integration tests, about 5 minutes. The slow
+# tiers (journey, real-file, and TC-CON-02's re-run under Python 3.10 and
+# 3.14) and the JUnit report plan statuses are recorded from run in the
+# "full suite" workflow (full.yml), started by hand before a gate check.
+# Pushes touching only the plan, gates, reviews or docs skip it; no test
+# reads those paths.
 
 on:
   push:
@@ -43,13 +45,7 @@ jobs:
           PYRIGHT_PYTHON_IGNORE_WARNINGS: "1"
         run: .venv/bin/pyright --pythonpath .venv/bin/python
 
-      - name: Test suite (all tiers)
-        run: .venv/bin/pytest -q --junitxml=test-results/ci.xml
-
-      - name: Keep the JUnit report for plan_status.py
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: junit-${{ github.sha }}
-          path: test-results/ci.xml
-          retention-days: 90
+      - name: Unit and integration tiers (TC-CON-02 runs in full.yml)
+        run: >-
+          .venv/bin/pytest -q tests/unit tests/integration
+          --deselect tests/integration/test_constraints.py::test_tc_con_02_suites_pass_under_3_10_and_3_14
