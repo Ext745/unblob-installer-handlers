@@ -5,7 +5,8 @@ All notable changes to this package. Versions follow
 a minor version adds handlers or changes behaviour, and a patch version
 fixes defects. Each release on the
 [releases page](https://github.com/Ext745/unblob-installer-handlers/releases)
-carries the wheel and the sdist that its release workflow verified.
+carries the wheel that its release workflow verified; releases after 0.2.0
+also carry the sdist.
 Requirement IDs (FR-…, NFR-…) refer to the project's functional
 specification, kept in the project's internal repository (not public).
 
@@ -26,6 +27,9 @@ specification, kept in the project's internal repository (not public).
 
 ### Changed
 
+- The sdist no longer packs the internal records (`docs/Method`,
+  `docs/Functionality`, `testing`, `PLAN.md`). The sdists of 0.1.0 to 0.2.0
+  did, so the public releases carry only their wheels.
 - `hygiene.yml` pins its actions by commit SHA.
 - CONTRIBUTING explains that pull requests are applied in the internal
   repository and arrive through the next sync.

@@ -47,7 +47,7 @@ by this package's `nsis` handler, which carries #1255's NSIS code (FSD §13b).
 
 The package is not on PyPI. Each release on GitHub
 (https://github.com/Ext745/unblob-installer-handlers/releases) carries the
-wheel and the sdist; use 0.2.0 or later (0.1.2 and earlier carry only the
+wheel (releases after 0.2.0 also carry the sdist); use 0.2.0 or later (0.1.2 and earlier carry only the
 first nine handlers, without Zigbee OTA, GBL, `.cyacd`, `.cyacd2`, the
 InstallShield single-file and plain setup packages, and NSIS; 0.1.0 cannot
 extract Inno Setup or InstallShield through the `unblob` command; 0.1.1 and

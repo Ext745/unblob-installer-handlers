@@ -17,6 +17,7 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 - Handler order with #1255 merged: TC-PE-05 and TC-PE-06 not done.
 
 ## Known broken / limitations
+- The internal releases' sdists, v0.1.0 to v0.2.0, contain the internal records and the two board MACs. They stay internal; the public copy's releases carry only the wheels. Never attach them anywhere public.
 - Hosted CI jobs (`hygiene.yml`, the `pull-request` job in `ci.yml`) can't start while the repo is private: GitHub reports a billing or spending-limit block (2026-11-25, probe PR #2). See `docs/decisions/0006-pull-requests-hosted.md`.
 - Upstream PRs are optional (FSD 0.27.0): a handler is offered to unblob only if there is public interest after the repo is public.
 
@@ -30,6 +31,12 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 4. Next release: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0 (CI split, PR job, this kit).
 
 ## Session log
+- 2026-11-25: sanity scan of the public copy (a fresh clone from GitHub).
+  - **History:** clean apart from `unblob.log` (tracked until 2026-10-28), a debug log carrying local paths (`~/...`).
+  - **Found and fixed:** every release sdist, v0.1.0 to v0.2.0, packed the internal records and the board MACs. Removed from the public releases (wheels checked clean, so they stay).
+  - **Prevention:** `pyproject.toml` excludes the internal paths from the sdist (test build: 189 files, none internal). `export-public.sh --releases` refuses any file holding an internal path or a rewritten string; tested on the old sdist (refused), the wheel and the new sdist (both pass).
+
+  Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: follow-ups.
   - **Prepublish allowlist:** `.prepublish-allow` holds 29 reviewed false positives, checked line by line. On the public export, `make prepublish` reports "Ready". The internal repo still flags its 6 real MAC lines, as it should.
   - **Small fixes:** `hygiene.yml` actions pinned by SHA; CONTRIBUTING explains how PRs flow; the public repo has a description and topics.

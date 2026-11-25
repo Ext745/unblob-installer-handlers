@@ -46,6 +46,10 @@ path = "src/unblob_installers/__about__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/unblob_installers"]
 
+[tool.hatch.build.targets.sdist]
+# The internal records never ship, in either repository (decision 0007).
+exclude = ["/docs/Method", "/docs/Functionality", "/testing", "/PLAN.md", "/.public-export"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [

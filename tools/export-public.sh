@@ -83,8 +83,31 @@ if ((releases)); then
     gh release download "$tag" -R "$INTERNAL_REPO" -D "$d"
     title=$(gh release view "$tag" -R "$INTERNAL_REPO" --json name -q .name)
     gh release view "$tag" -R "$INTERNAL_REPO" --json body -q .body > "$d.notes"
+    # Publish a file only if it holds no internal path and no rewritten string.
+    # sdists up to v0.2.0 packed the internal records, so they stay internal.
+    ok=()
+    for f in "$d"/*; do
+      x="$d.x/$(basename "$f")"; mkdir -p "$x"
+      case "$f" in
+        *.tar.gz) tar xzf "$f" -C "$x" ;;
+        *.whl|*.zip) python3 -m zipfile -e "$f" "$x" ;;
+        *) cp "$f" "$x/" ;;
+      esac
+      bad=""
+      for p in "${INTERNAL[@]}"; do
+        [[ -n $(find "$x" -path "*/${p%/}" -print -quit) ]] && bad="internal path $p"
+      done
+      if [[ -z "$bad" ]]; then
+        while IFS= read -r n; do
+          [[ -n "$n" ]] && grep -rqiF -- "$n" "$x" && bad="a rewritten string"
+        done <<<"$olds"$'\n'"$needles"
+      fi
+      if [[ -n "$bad" ]]; then echo "export: $tag: not publishing $(basename "$f"): $bad" >&2
+      else ok+=("$f"); fi
+    done
+    ((${#ok[@]})) || { echo "export: $tag: nothing publishable" >&2; continue; }
     gh release create "$tag" -R "$PUBLIC_REPO" --verify-tag --title "$title" \
-       --notes-file "$d.notes" "$d"/*
-    (cd "$d" && sha256sum ./*)
+       --notes-file "$d.notes" "${ok[@]}"
+    sha256sum "${ok[@]}"
   done
 fi
