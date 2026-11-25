@@ -1,13 +1,18 @@
 name: lint + unit tests
 
 # Every job runs on the project's own runner (.devcontainer); there are no
-# hosted-runner minutes for this private repo. This gate covers the unit tier
-# only: integration fixtures and real-file tests join it as /build adds them.
+# hosted-runner minutes for this private repo. The job runs the whole suite
+# (unit, integration, real-file, journey) once per change and keeps its JUnit
+# report as an artifact: plan statuses are recorded from it (plan_status.py),
+# so no separate local run is needed. Pushes touching only the plan, gates,
+# reviews or docs skip it; no test reads those paths.
 
 on:
   push:
     branches: [main]
+    paths-ignore: ["testing/**", "docs/**"]
   pull_request:
+    paths-ignore: ["testing/**", "docs/**"]
 
 permissions:
   contents: read
@@ -38,5 +43,13 @@ jobs:
           PYRIGHT_PYTHON_IGNORE_WARNINGS: "1"
         run: .venv/bin/pyright --pythonpath .venv/bin/python
 
-      - name: Unit tier
-        run: .venv/bin/pytest -q
+      - name: Test suite (all tiers)
+        run: .venv/bin/pytest -q --junitxml=test-results/ci.xml
+
+      - name: Keep the JUnit report for plan_status.py
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: junit-${{ github.sha }}
+          path: test-results/ci.xml
+          retention-days: 90
