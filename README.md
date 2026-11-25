@@ -1,7 +1,7 @@
 # unblob-installer-handlers
 
-An [unblob](https://github.com/onekey-sec/unblob) plugin that adds nine
-handlers: four for MCU firmware containers and five for Windows installers.
+An [unblob](https://github.com/onekey-sec/unblob) plugin that adds sixteen
+handlers: eight for MCU firmware containers and eight for Windows installers.
 Install it next to unblob and the handlers are found through unblob's plugin
 entry point. unblob carves their chunks and recurses into what they extract,
 so there is no separate tool to learn.
@@ -101,8 +101,11 @@ unblob in the meantime.
 | UF2 | [#1687](https://github.com/onekey-sec/unblob/pull/1687) |
 | MCUboot | [#1688](https://github.com/onekey-sec/unblob/pull/1688) |
 | InstallShield | [#1689](https://github.com/onekey-sec/unblob/pull/1689) |
+| Single-file InstallShield (`installshield_setup`) | carries [#1707](https://github.com/onekey-sec/unblob/pull/1707) |
+| NSIS (`nsis`) | carries [#1255](https://github.com/onekey-sec/unblob/pull/1255) |
 | Intel HEX, DfuSe | not opened yet |
 | Inno Setup, Setup Factory, WiX/Burn | not opened yet |
+| Plain InstallShield, Zigbee OTA, GBL, `.cyacd`/`.cyacd2` | not opened yet |
 
 ## Documentation
 
@@ -113,6 +116,12 @@ unblob in the meantime.
 - The project's working records: [`PLAN.md`](PLAN.md) (progress per handler),
   [`testing/test-plan.yaml`](testing/test-plan.yaml) (every test and its last
   result), and [`docs/Method/`](docs/Method/) (how it was built and tested).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) for
+reporting a vulnerability, and [CHANGELOG.md](CHANGELOG.md) for what each
+release changed.
 
 ## Licence
 
