@@ -2,7 +2,7 @@
 
 > `docs/Functionality/`, `docs/Method/`, `testing/` and `PLAN.md` are kept in the project's internal repository and are not in the public one. References to them here, and FSD section and requirement IDs, point there.
 
-**Updated:** 2026-11-25 · **Maturity:** `experimental` · **Visibility:** private (internal repo); public copy created 2026-11-25, still private
+**Updated:** 2026-11-25 · **Maturity:** `experimental` · **Visibility:** internal repo private; public copy `Ext745/unblob-installer-handlers` public since 2026-11-25
 
 ## Summary
 v0.2.0 is released, with sixteen handlers: eight for MCU firmware containers and eight for Windows installers. 223 of 226 planned tests are recorded as passing. The other 3 are FSD Phase 5 (upstream, after shipment) and don't limit the shipped plugin: TC-PE-05/06 guard a future case (if unblob PR #1255 merges, its built-in `pe` handler would run before this plugin's). TC-CON-07 waits only for the next `full.yml` record: upstream PRs became optional in FSD 0.27.0, and it now passes when each handler has a PR link or is marked "not offered".
@@ -18,19 +18,24 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 
 ## Known broken / limitations
 - The internal releases' sdists, v0.1.0 to v0.2.0, contain the internal records and the two board MACs. They stay internal; the public copy's releases carry only the wheels. Never attach them anywhere public.
-- Hosted CI jobs (`hygiene.yml`, the `pull-request` job in `ci.yml`) can't start while the repo is private: GitHub reports a billing or spending-limit block (2026-11-25, probe PR #2). See `docs/decisions/0006-pull-requests-hosted.md`.
+- Hosted CI jobs can't start in the private internal repo: GitHub reports a billing or spending-limit block. On the public copy they run (probe PR #1, 2026-11-25: Hygiene and the hosted job passed). Earlier note: the block was seen (2026-11-25, probe PR #2). See `docs/decisions/0006-pull-requests-hosted.md`.
 - Upstream PRs are optional (FSD 0.27.0): a handler is offered to unblob only if there is public interest after the repo is public.
 
 ## Open questions
 - `unblob==26.6.4` is an exact pin (FSD C-01). Installing the plugin beside a newer unblob will downgrade unblob or fail to resolve. 26.6.4 is still the latest on PyPI (checked 2026-11-25). Proposal waiting on the human: a lower bound plus a CI job against the newest unblob, as an FSD C-01 change with a decision record.
 
 ## Next steps
-1. Review the public copy `Ext745/unblob-installer-handlers` (still private), then flip it public. That is the human's act. Its hosted jobs (hygiene, lint + unit tests) can't start until then, because of the billing block.
-2. After the flip: prove the hosted PR job with a throwaway PR on the public copy (probe PR #2 on the internal repo closed 2026-11-25, its hosted job never started).
-3. After the flip: enable private vulnerability reporting on the public repo (`SECURITY.md` points to it), and protect its main branch: `gh api -X POST repos/Ext745/unblob-installer-handlers/rulesets --input tools/public-ruleset.json` (rulesets on private repos need GitHub Pro).
-4. Next release: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0 (CI split, PR job, this kit).
+1. Turn on private vulnerability reporting on the public repo (Settings → Security; `SECURITY.md` points to it). That's the human's step.
+2. Decide on the unblob pin (see Open questions).
+3. Next release, v0.2.1: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0. That covers the CI split, the PR job, the kit, the test reformat, `--basetemp`, C-07 / FSD 0.27.0, TC-CON-07/11 skips, the sdist exclusions and `scrub.py`. Then `make publish-releases`.
+4. Optional: port the `.prepublish-allow` support in `tools/scrub.py` / `prepublish.sh` back to the central kit template.
 
 ## Session log
+- 2026-11-25: the public copy went public, by the human's request.
+  - **Ruleset 28071879:** no force-push or deletion on `main`.
+  - **Probe PR #1 on the public copy:** Hygiene (45607678851) and the hosted lint, pyright and unit job (45607679102) passed, and the bench job was skipped. Closed, and its branch deleted.
+
+  By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: `unblob.log` stripped from the public history (decision 0007); the public copy was force-pushed once, before the flip. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: sanity scan of the public copy (a fresh clone from GitHub).
   - **History:** clean apart from `unblob.log` (tracked until 2026-10-28), a debug log carrying local home-directory paths.
