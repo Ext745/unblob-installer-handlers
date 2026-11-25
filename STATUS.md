@@ -25,7 +25,7 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 
 ## Next steps
 1. Review the public copy `Ext745/unblob-installer-handlers` (still private), then flip it public. That is the human's act. Its hosted jobs (hygiene, lint + unit tests) can't start until then, because of the billing block.
-2. Close probe PR #2 on the internal repo (its hosted job stays blocked there); prove the hosted PR job with a throwaway PR on the public copy after the flip.
+2. After the flip: prove the hosted PR job with a throwaway PR on the public copy (probe PR #2 on the internal repo closed 2026-11-25, its hosted job never started).
 3. After the flip: enable private vulnerability reporting on the public repo (`SECURITY.md` points to it).
 4. Next release: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0 (CI split, PR job, this kit).
 
