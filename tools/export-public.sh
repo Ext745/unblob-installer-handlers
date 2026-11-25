@@ -76,7 +76,8 @@ fi
 
 if ((releases)); then
   have=$(gh release list -R "$PUBLIC_REPO" --limit 200 --json tagName -q '.[].tagName')
-  for tag in $(gh release list -R "$INTERNAL_REPO" --limit 200 --json tagName -q '.[].tagName'); do
+  # Oldest first, so the newest release ends up marked "latest".
+  for tag in $(gh release list -R "$INTERNAL_REPO" --limit 200 --json tagName -q '.[].tagName' | tac); do
     grep -qxF "$tag" <<<"$have" && continue
     d="$work/release-$tag"; mkdir -p "$d"
     gh release download "$tag" -R "$INTERNAL_REPO" -D "$d"
