@@ -95,19 +95,17 @@ The full list is in the [user manual](docs/UserDocumentation/User-Manual.md#5-li
 
 ## Upstream
 
-Each handler is meant to land in unblob itself. This plugin works with stock
-unblob in the meantime.
+This plugin is how these handlers ship, and it works with stock unblob. It
+doesn't wait for any of them to be merged into unblob. Three were offered
+upstream, and two carry code from open unblob pull requests:
 
 | Handler | unblob PR |
 |---|---|
-| UF2 | [#1687](https://github.com/onekey-sec/unblob/pull/1687) |
-| MCUboot | [#1688](https://github.com/onekey-sec/unblob/pull/1688) |
-| InstallShield | [#1689](https://github.com/onekey-sec/unblob/pull/1689) |
-| Single-file InstallShield (`installshield_setup`) | carries [#1707](https://github.com/onekey-sec/unblob/pull/1707) |
-| NSIS (`nsis`) | carries [#1255](https://github.com/onekey-sec/unblob/pull/1255) |
-| Intel HEX, DfuSe | not opened yet |
-| Inno Setup, Setup Factory, WiX/Burn | not opened yet |
-| Plain InstallShield, Zigbee OTA, GBL, `.cyacd`/`.cyacd2` | not opened yet |
+| UF2 | offered in [#1687](https://github.com/onekey-sec/unblob/pull/1687) |
+| MCUboot | offered in [#1688](https://github.com/onekey-sec/unblob/pull/1688) |
+| InstallShield | offered in [#1689](https://github.com/onekey-sec/unblob/pull/1689) |
+| Single-file InstallShield (`installshield_setup`) | carries code from [#1707](https://github.com/onekey-sec/unblob/pull/1707) |
+| NSIS (`nsis`) | carries code from [#1255](https://github.com/onekey-sec/unblob/pull/1255) |
 
 ## Documentation
 
