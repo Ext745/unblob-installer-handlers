@@ -28,6 +28,7 @@ The owner also wants the internal working records to stay private: `docs/Method/
 
 ## Consequences
 - **Two repositories.** A change reaches the public copy only when the export is run and pushed. Public pull requests are applied in the internal repository and then exported, never merged on the public side.
+- **2026-11-25, before the flip:** `unblob.log` (a debug log tracked until 2026-10-28, with local paths) was added to the stripped paths. That changed the public hashes once and needed one force-push of the public copy, while nobody else had a clone.
 - **The rule files must never change for commits already exported.** A changed rule changes every later hash, and the next push would no longer fast-forward.
 - **`make prepublish` on the public copy still reports false positives in history.** They were reviewed on 2026-11-25 and accepted:
   - version strings read as public IPs (for example `9.1.1.1`, `1.0.0.2`); <!-- scrub:allow version numbers -->

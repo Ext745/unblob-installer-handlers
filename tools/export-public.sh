@@ -20,7 +20,7 @@ set -euo pipefail
 
 PUBLIC_REPO="Ext745/unblob-installer-handlers"
 INTERNAL_REPO="Ext745/unblob-installer-handlers-internal"
-INTERNAL=(docs/Method/ docs/Functionality/ testing/ PLAN.md)
+INTERNAL=(docs/Method/ docs/Functionality/ testing/ PLAN.md unblob.log)
 
 push=0; releases=0
 for a in "$@"; do

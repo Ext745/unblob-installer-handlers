@@ -31,6 +31,7 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 4. Next release: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0 (CI split, PR job, this kit).
 
 ## Session log
+- 2026-11-25: `unblob.log` stripped from the public history (decision 0007); the public copy was force-pushed once, before the flip. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: sanity scan of the public copy (a fresh clone from GitHub).
   - **History:** clean apart from `unblob.log` (tracked until 2026-10-28), a debug log carrying local paths (`~/...`).
   - **Found and fixed:** every release sdist, v0.1.0 to v0.2.0, packed the internal records and the board MACs. Removed from the public releases (wheels checked clean, so they stay).
