@@ -5,7 +5,7 @@
 **Updated:** 2026-11-25 · **Maturity:** `experimental` · **Visibility:** internal repo private; public copy `Ext745/unblob-installer-handlers` public since 2026-11-25
 
 ## Summary
-v0.2.0 is released, with sixteen handlers: eight for MCU firmware containers and eight for Windows installers. 223 of 226 planned tests are recorded as passing. The other 3 are FSD Phase 5 (upstream, after shipment) and don't limit the shipped plugin: TC-PE-05/06 guard a future case (if unblob PR #1255 merges, its built-in `pe` handler would run before this plugin's). TC-CON-07 waits only for the next `full.yml` record: upstream PRs became optional in FSD 0.27.0, and it now passes when each handler has a PR link or is marked "not offered".
+v0.2.1 is released (2026-11-25; no handler changes since v0.2.0), with sixteen handlers: eight for MCU firmware containers and eight for Windows installers. 223 of 226 planned tests are recorded as passing. The other 3 are FSD Phase 5 (upstream, after shipment) and don't limit the shipped plugin: TC-PE-05/06 guard a future case (if unblob PR #1255 merges, its built-in `pe` handler would run before this plugin's). TC-CON-07 waits only for the next `full.yml` record: upstream PRs became optional in FSD 0.27.0, and it now passes when each handler has a PR link or is marked "not offered".
 
 ## Verified on real hardware
 A host-side plugin, so "real" here means real files on the project's runner. See `TESTING.md`.
@@ -27,10 +27,16 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 ## Next steps
 1. Turn on private vulnerability reporting on the public repo (Settings → Security; `SECURITY.md` points to it). That's the human's step.
 2. Watch the weekly `unblob latest` runs. When one is green on a newer unblob, bump the tested version (decision 0008).
-3. Next release, v0.2.1: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0. That covers the CI split, the PR job, the kit, the test reformat, `--basetemp`, C-07 / FSD 0.27.0, TC-CON-07/11 skips, the sdist exclusions and `scrub.py`. Then `make publish-releases`.
+3. Reinstall v0.2.1 on the bench PC through `comp_install` and confirm `unblob` still lists the plugin (no handler changes, so no per-format check needed).
 4. Optional: port the `.prepublish-allow` support in `tools/scrub.py` / `prepublish.sh` back to the central kit template.
 
 ## Session log
+- 2026-11-25: v0.2.1 released.
+  - **Evidence:** full suite 45611010432 at 87b2c4b (452 passed, 7 xfailed); statuses recorded; review addenda U and F signed by the human; ready-for-shipment checked by the agent (not independently); dry run 45615542502.
+  - **Release:** tag on 81c99be, release run 45617195455 (17 journey steps on the wheel). Files byte-identical to the artifact, and the sdist is clean. Copied to the public copy (Latest).
+  - **Harness:** pin bumped in cacf278, host tests 1016 passed.
+
+  Not reinstalled on the bench PC. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: unblob pin loosened, by the user (FSD 0.28.0, decision 0008).
   - **Package:** requires `unblob>=26.6.4`. `constraints.txt` pins the tested 26.6.4, used by `ci.yml`, `full.yml`, release verify, `make build` and TC-CON-02.
   - **New `unblob-latest.yml`:** weekly and on demand. Internal: pyright plus the unit and integration tiers on the bench. Public: pyright plus the unit tier, hosted.
