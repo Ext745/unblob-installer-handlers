@@ -29,6 +29,12 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 1. Watch the weekly `unblob latest` runs. When one is green on a newer unblob, bump the tested version (decision 0008).
 
 ## Session log
+- 2026-11-25 (end of session):
+  - **Allowlist:** also copied to Tvheadend_analog (PR #2, merged f4f7751), the only other public repo with the kit.
+  - **Git identity:** the global `user.email` is now the GitHub noreply address. `sendemail.from` and a local `user.email` in hvr1950-fm and asm_unpack keep kernel patches on the real address.
+  - **Open, for the human:** Tvheadend_analog's public history still has the personal email on 110 commits. Cleaning it means a history rewrite and force-push of a public repo.
+
+  By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: `.prepublish-allow` support ported to the kit template: Ext745/project-template PR #7 (`scrub.py` fingerprints and allowlist with a self-test case, mutation-checked; `prepublish.sh` count; `TEMPLATE_USAGE.md`). Its CI passed, and it was merged as e22476c. The project-specific exclusion of `test_setupfactory_real.py` was not ported. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: private vulnerability reporting enabled on the public repo, as `SECURITY.md` describes. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: v0.2.1 reinstalled on the bench PC through the firmware-re `comp_install`, after commenting out the bench profile's stale 0.1.2 wheel override (`x86/harness.conf`, untracked; backup kept in the session scratchpad). Plugin 0.2.1 with the release wheel's hash, unblob 26.6.4, all 16 handlers and 4 extractors present. Bench check: one real file per handler through the installed `unblob` command, all claimed by the intended handler with no plugin error report. By: agent: Claude Opus 5.5 via Claude Code
