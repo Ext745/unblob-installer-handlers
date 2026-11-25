@@ -6,6 +6,9 @@ RIG      ?= A
 HOURS    ?= 72
 SOAK_CMD ?=
 SOAK_ARGS ?=
+# pytest's temp root: off /tmp (a small tmpfs here) and outside the repo.
+# pytest empties it at the start of each run, so it never piles up.
+PYTEST_BASETEMP ?= $(HOME)/.cache/unblob-installer-handlers/pytest
 
 .PHONY: build test hil soak scrub-check prepublish audit setup
 
@@ -18,10 +21,12 @@ test:
 	.venv/bin/ruff check .
 	.venv/bin/ruff format --check .
 	.venv/bin/pyright --pythonpath .venv/bin/python
-	.venv/bin/pytest -q
+	@mkdir -p $(PYTEST_BASETEMP)
+	.venv/bin/pytest -q --basetemp=$(PYTEST_BASETEMP)
 
 hil:
-	.venv/bin/pytest -q -m journey
+	@mkdir -p $(PYTEST_BASETEMP)
+	.venv/bin/pytest -q -m journey --basetemp=$(PYTEST_BASETEMP)
 
 soak:
 	@test -n "$(SOAK_CMD)" || { echo 'usage: make soak RIG=A HOURS=72 SOAK_CMD="..." [SOAK_ARGS="--error-pattern ..."]'; exit 2; }

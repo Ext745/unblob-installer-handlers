@@ -28,6 +28,7 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 4. Next release: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0 (CI split, PR job, this kit).
 
 ## Session log
+- 2026-11-25: `make test` and `make hil` pass `--basetemp` to pytest, defaulting to `~/.cache/unblob-installer-handlers/pytest` (override with `PYTEST_BASETEMP`), because pytest's temp dirs filled the 3.8 GB `/tmp` tmpfs on this PC. `ci.yml` and `full.yml` call pytest directly and are unchanged. Checked with `tests/integration/test_common.py` (15 passed, nothing written to `/tmp`). By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: repo kit landed on `main` as a merge of `repo-kit` (PR #1), so PR #1 closes as merged. Test files reformatted for `ruff format` with each `scrub:allow` kept on the line holding the version string. On this host: scrub, ruff, ruff format and pyright pass. pytest: 388 passed, 32 failed, because the devcontainer-built `.venv` has `/workspaces/...` shebangs (pyright, extractors) that don't resolve here. The runner's CI on `main` is the evidence. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: repo kit ported onto `main` after v0.2.0: conflicts in `ci.yml`, `.gitignore`, `CHANGELOG.md`, `README.md` resolved; STATUS, GOAL, TESTING, AGENTS updated to v0.2.0; decision 0006 added. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: v0.2.0 shipped, sixteen handlers. By: human + agent via Claude Code (from commit trailers)
