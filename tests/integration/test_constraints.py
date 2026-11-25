@@ -16,10 +16,31 @@ PY310 = Path("/opt/python3.10/bin/python3")  # pinned in .devcontainer/Dockerfil
 WHEELS_310 = Path("/opt/wheels-py310")  # offline wheelhouse for it
 
 
-def test_tc_con_01_unblob_pinned_to_26_6_4():
-    assert importlib.metadata.version("unblob") == "26.6.4"
+FLOOR = "26.6.4"  # the oldest unblob the package supports (FSD C-01)
+
+
+def tested_unblob() -> str:
+    """The unblob version CI and releases test with: constraints.txt's pin."""
+    pins = [
+        line.split("==", 1)[1].strip()
+        for line in (ROOT / "constraints.txt").read_text().splitlines()
+        if line.startswith("unblob==")
+    ]
+    assert len(pins) == 1, pins
+    return pins[0]
+
+
+def as_tuple(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split("."))
+
+
+def test_tc_con_01_unblob_floor_and_tested_version():
     requires = importlib.metadata.requires("unblob-installer-handlers") or []
-    assert "unblob==26.6.4" in requires
+    assert f"unblob>={FLOOR}" in requires
+    tested = tested_unblob()
+    assert as_tuple(tested) >= as_tuple(FLOOR)
+    # The environment under test runs the tested version, not whatever is newest.
+    assert importlib.metadata.version("unblob") == tested
 
 
 def output(*command: str) -> str:
@@ -63,7 +84,8 @@ def test_tc_con_02_suites_pass_under_3_10_and_3_14(tmp_path: Path):
     subprocess.run([str(PY310), "-m", "venv", str(venv)], check=True)
     python = str(venv / "bin" / "python")
     install = [python, "-m", "pip", "install", "-q", "--no-index"]
-    install += ["--find-links", str(WHEELS_310), "-e", f"{ROOT}[dev]"]
+    install += ["--find-links", str(WHEELS_310), "-c", str(ROOT / "constraints.txt")]
+    install += ["-e", f"{ROOT}[dev]"]
     subprocess.run(install, check=True)
     suites = ["tests/unit", "tests/integration"]
     run = subprocess.run(

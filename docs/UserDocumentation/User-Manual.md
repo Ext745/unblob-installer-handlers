@@ -2,7 +2,7 @@
 
 How to install the handler plugin next to unblob and use it.
 
-The plugin adds sixteen handlers to unblob 26.6.4 (the table in §3): eight
+The plugin adds sixteen handlers to unblob (the table in §3): eight
 for MCU firmware containers (UF2, Intel HEX, DfuSe, MCUboot, Zigbee OTA,
 Silicon Labs GBL, `.cyacd` and `.cyacd2`) and eight for Windows installers
 (InstallShield cabinet, cabinet set, single-file and plain setup packages,
@@ -22,8 +22,11 @@ is no separate tool to learn.
 ## 1. What you need
 
 - Linux x86-64 and CPython 3.10–3.14 (FSD C-02).
-- unblob **26.6.4** exactly (C-01). The package pins it; installing it into an
-  environment with another unblob version replaces that version.
+- unblob **26.6.4 or later** (C-01). Releases are tested with the version in
+  `constraints.txt` (26.6.4). A newer unblob is tried weekly in CI but not
+  verified on real files; if one misbehaves, install the tested version:
+  `pip install -c constraints.txt <wheel>`, with `constraints.txt` from the
+  release's tag.
 - For the installer formats, the external extractors on `PATH` (FSD §16.1):
 
 | Command | Needed for | Version |

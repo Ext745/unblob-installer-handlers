@@ -36,10 +36,10 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Fresh venv with unblob 26.6.4 and the pinned dev tools
+      - name: Fresh venv with the tested unblob (constraints.txt) and the pinned dev tools
         run: |
           python3 -m venv .venv
-          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/pip install -q -c constraints.txt -e '.[dev]'
           .venv/bin/python -c "import importlib.metadata as m; print('unblob', m.version('unblob'))"
 
       - name: ruff (unblob's configuration, FSD C-05)
@@ -71,10 +71,10 @@ jobs:
       - name: libmagic and 7z (unblob and the NSIS unit tests need them)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libmagic1 7zip
 
-      - name: Fresh venv with unblob 26.6.4 and the pinned dev tools
+      - name: Fresh venv with the tested unblob (constraints.txt) and the pinned dev tools
         run: |
           python3 -m venv .venv
-          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/pip install -q -c constraints.txt -e '.[dev]'
 
       - name: ruff (unblob's configuration, FSD C-05)
         run: |

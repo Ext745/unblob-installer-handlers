@@ -61,7 +61,7 @@ jobs:
         run: |
           venv="$RUNNER_TEMP/verify-venv"
           python3 -m venv "$venv"
-          "$venv/bin/pip" install -q dist/*.whl 'pytest==8.4.2'
+          "$venv/bin/pip" install -q -c constraints.txt dist/*.whl 'pytest==8.4.2'
           # The package under test is the wheel, not the checkout's src/.
           "$venv/bin/python" -c "import unblob_installers as u; print(u.__file__); assert '/verify-venv/' in u.__file__"
           "$venv/bin/pytest" tests/journey -m journey --realfiles "$REALFILES_DIR" --junitxml=journey.xml

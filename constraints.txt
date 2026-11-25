@@ -1,0 +1,6 @@
+# The unblob release CI and releases are tested with (FSD C-01, decision 0008).
+# The package itself requires only unblob>=26.6.4. The weekly "unblob latest"
+# workflow tries the newest release; when it passes on a newer one, bump this
+# line, the two pins in .devcontainer/Dockerfile and TC-CON-01's test data
+# together, and record the change in CHANGELOG.
+unblob==26.6.4

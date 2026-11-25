@@ -36,11 +36,11 @@ requirements):
 
 ```sh
 python3 -m venv .venv
-.venv/bin/pip install -e '.[dev]'
+.venv/bin/pip install -c constraints.txt -e '.[dev]'
 ```
 
-This installs unblob 26.6.4 (pinned) and the pinned `pytest`, `ruff` and
-`pyright`. Supported Python versions are 3.10 to 3.14, so do not use
+This installs the tested unblob (`constraints.txt`, 26.6.4) and the pinned
+`pytest`, `ruff` and `pyright`. Supported Python versions are 3.10 to 3.14, so do not use
 features newer than 3.10, in tests too.
 
 ## Checks

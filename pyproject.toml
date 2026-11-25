@@ -9,7 +9,7 @@ description = "unblob handlers for Windows installers and MCU firmware container
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-dependencies = ["unblob==26.6.4"]
+dependencies = ["unblob>=26.6.4"]   # tested version: constraints.txt (FSD C-01)
 authors = [{ name = "Ext745" }]
 keywords = ["unblob", "firmware", "extraction", "installer", "uf2", "intel-hex", "dfuse", "mcuboot", "installshield", "inno-setup", "setup-factory", "wix-burn"]
 classifiers = [

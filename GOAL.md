@@ -11,7 +11,7 @@ Let [unblob](https://github.com/onekey-sec/unblob) unpack formats it can't handl
 Firmware analysts often need to pull an image out of a vendor's Windows updater, and these are the containers that board build tools and vendors ship. This project was also the harness's first real pilot, run through the harness only.
 
 ## Constraints
-- Platform: Linux x86-64, CPython 3.10 to 3.14, pinned to unblob 26.6.4.
+- Platform: Linux x86-64, CPython 3.10 to 3.14, unblob 26.6.4 or later (tested version in `constraints.txt`).
 - External tools: `unshield`, `innoextract`, `sfextract`, `7z` (NSIS).
 - Licensing: no code translated from UniExtract2's GPL sources.
 - Security: input files are hostile, the host is trusted (FSD §18).

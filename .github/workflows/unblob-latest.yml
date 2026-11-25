@@ -1,0 +1,78 @@
+name: unblob latest
+
+# Weekly early warning (FSD C-01, decision 0008): the package requires only
+# unblob>=26.6.4, while CI and releases test with the version pinned in
+# constraints.txt. This runs the suites against the NEWEST unblob release, so
+# a new unblob that breaks the handlers shows up as a red run here, before a
+# user hits it. A green run on a newer release is the signal to bump
+# constraints.txt. Nothing here records plan statuses.
+#   Internal repository: unit and integration tiers on the bench runner.
+#   Public copy: unit tier on a GitHub-hosted runner (no bench there).
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    if: github.repository == 'Ext745/unblob-installer-handlers-internal'
+    runs-on: [self-hosted, testbench]
+    concurrency:
+      group: bench         # one job at a time on the runner next to the bench
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Fresh venv with the newest unblob
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/pip install -q --upgrade unblob
+          tested=$(sed -n 's/^unblob==//p' constraints.txt)
+          newest=$(.venv/bin/python -c "import importlib.metadata as m; print(m.version('unblob'))")
+          echo "unblob tested $tested, newest $newest" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: pyright (unblob's configuration, FSD C-05)
+        env:
+          PYRIGHT_PYTHON_IGNORE_WARNINGS: "1"
+        run: .venv/bin/pyright --pythonpath .venv/bin/python
+
+      - name: Unit and integration tiers on the newest unblob
+        # TC-CON-01 asserts the tested version and TC-CON-02 builds its own
+        # 3.10 venv from the tested wheelhouse, so neither applies here.
+        run: >-
+          .venv/bin/pytest -q tests/unit tests/integration
+          --deselect tests/integration/test_constraints.py::test_tc_con_01_unblob_floor_and_tested_version
+          --deselect tests/integration/test_constraints.py::test_tc_con_02_suites_pass_under_3_10_and_3_14
+
+  hosted:
+    if: github.repository != 'Ext745/unblob-installer-handlers-internal'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: libmagic and 7z (unblob and the NSIS unit tests need them)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libmagic1 7zip
+
+      - name: Fresh venv with the newest unblob
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -e '.[dev]'
+          .venv/bin/pip install -q --upgrade unblob
+          tested=$(sed -n 's/^unblob==//p' constraints.txt)
+          newest=$(.venv/bin/python -c "import importlib.metadata as m; print(m.version('unblob'))")
+          echo "unblob tested $tested, newest $newest" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: pyright (unblob's configuration, FSD C-05)
+        env:
+          PYRIGHT_PYTHON_IGNORE_WARNINGS: "1"
+        run: .venv/bin/pyright --pythonpath .venv/bin/python
+
+      - name: Unit tier on the newest unblob
+        run: .venv/bin/pytest -q tests/unit

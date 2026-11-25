@@ -18,3 +18,4 @@ Decisions aren't deleted. If one is reversed, write a new record that supersedes
 | [0005](0005-record-significant-decisions.md) | Record significant decisions in `docs/decisions/` | accepted | 2026-11-06 |
 | [0006](0006-pull-requests-hosted.md) | Pull requests run on a GitHub-hosted runner | accepted | 2026-11-25 |
 | [0007](0007-public-copy.md) | A public copy with its own history; the internal repository stays private | accepted | 2026-11-25 |
+| [0008](0008-unblob-floor-and-tested-version.md) | unblob 26.6.4 or later, one tested version, newest tried weekly | accepted | 2026-11-25 |

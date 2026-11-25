@@ -22,15 +22,21 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 - Upstream PRs are optional (FSD 0.27.0): a handler is offered to unblob only if there is public interest after the repo is public.
 
 ## Open questions
-- `unblob==26.6.4` is an exact pin (FSD C-01). Installing the plugin beside a newer unblob will downgrade unblob or fail to resolve. 26.6.4 is still the latest on PyPI (checked 2026-11-25). Proposal waiting on the human: a lower bound plus a CI job against the newest unblob, as an FSD C-01 change with a decision record.
+- None. (The unblob pin was loosened on 2026-11-25, decision 0008.)
 
 ## Next steps
 1. Turn on private vulnerability reporting on the public repo (Settings → Security; `SECURITY.md` points to it). That's the human's step.
-2. Decide on the unblob pin (see Open questions).
+2. Run `unblob latest` once by hand (`gh workflow run unblob-latest.yml`) to see it green before its first Monday.
 3. Next release, v0.2.1: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0. That covers the CI split, the PR job, the kit, the test reformat, `--basetemp`, C-07 / FSD 0.27.0, TC-CON-07/11 skips, the sdist exclusions and `scrub.py`. Then `make publish-releases`.
 4. Optional: port the `.prepublish-allow` support in `tools/scrub.py` / `prepublish.sh` back to the central kit template.
 
 ## Session log
+- 2026-11-25: unblob pin loosened, by the user (FSD 0.28.0, decision 0008).
+  - **Package:** requires `unblob>=26.6.4`. `constraints.txt` pins the tested 26.6.4, used by `ci.yml`, `full.yml`, release verify, `make build` and TC-CON-02.
+  - **New `unblob-latest.yml`:** weekly and on demand. Internal: pyright plus the unit and integration tiers on the bench. Public: pyright plus the unit tier, hosted.
+  - **TC-CON-01** rewritten (floor, and tested version installed); its status is `not done` until the next `full.yml` run.
+
+  Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: the public copy went public, by the human's request.
   - **Ruleset 28071879:** no force-push or deletion on `main`.
   - **Probe PR #1 on the public copy:** Hygiene (45607678851) and the hosted lint, pyright and unit job (45607679102) passed, and the bench job was skipped. Closed, and its branch deleted.

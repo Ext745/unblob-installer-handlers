@@ -34,7 +34,9 @@ space is a gap between files, and the base address is in each file name
 ## Requirements
 
 - Linux x86-64, CPython 3.10–3.14.
-- unblob **26.6.4**. The package pins it.
+- unblob **26.6.4 or later**. Releases are tested with the version in
+  [`constraints.txt`](constraints.txt) (26.6.4); newer unblob releases are
+  tried weekly in CI.
 - For the installer formats, these tools on `PATH`:
 
 | Command | Needed for | Version |

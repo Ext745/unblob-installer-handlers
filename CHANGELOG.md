@@ -27,6 +27,9 @@ specification, kept in the project's internal repository (not public).
 
 ### Changed
 
+- The package requires unblob 26.6.4 or later instead of exactly 26.6.4
+  (FSD 0.28.0, decision 0008). CI and releases test with the version pinned
+  in `constraints.txt`; a weekly workflow tries the newest unblob.
 - The sdist no longer packs the internal records (`docs/Method`,
   `docs/Functionality`, `testing`, `PLAN.md`). The sdists of 0.1.0 to 0.2.0
   did, so the public releases carry only their wheels.

@@ -19,7 +19,7 @@ VENV ?= $(if $(VENV_SHEBANG),$(if $(wildcard $(VENV_SHEBANG)),.venv,$(HOME)/.cac
 
 build:
 	python3 -m venv $(VENV)
-	$(VENV)/bin/pip install -q -e '.[dev]'
+	$(VENV)/bin/pip install -q -c constraints.txt -e '.[dev]'
 
 test:
 	python3 tools/scrub.py --self-test
