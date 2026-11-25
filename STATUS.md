@@ -10,6 +10,7 @@ v0.2.1 is released (2026-11-25; no handler changes since v0.2.0), with sixteen h
 ## Verified on real hardware
 A host-side plugin, so "real" here means real files on the project's runner. See `TESTING.md`.
 - v0.2.0 release run 45529483286: journey 17 passed on the released wheel.
+- Bench check on v0.2.1 after reinstalling it on the bench PC (2026-11-25): one real file per handler through the installed `unblob` command, all exit 0 with the chunk from the intended handler; the InstallShield set 51/51 MD5 (`PLAN.md`).
 - Bench check on v0.2.0 after reinstalling it on the bench PC: one real file per new format through the installed `unblob` command, all exit 0 with the chunk from the intended handler (`PLAN.md`).
 - Boards prove where the firmware test files came from: RP2040, ESP32-S3 and classic ESP32 on 2026-10-24.
 
@@ -27,10 +28,10 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 ## Next steps
 1. Turn on private vulnerability reporting on the public repo (Settings → Security; `SECURITY.md` points to it). That's the human's step.
 2. Watch the weekly `unblob latest` runs. When one is green on a newer unblob, bump the tested version (decision 0008).
-3. Reinstall v0.2.1 on the bench PC through `comp_install` and confirm `unblob` still lists the plugin (no handler changes, so no per-format check needed).
-4. Optional: port the `.prepublish-allow` support in `tools/scrub.py` / `prepublish.sh` back to the central kit template.
+3. Optional: port the `.prepublish-allow` support in `tools/scrub.py` / `prepublish.sh` back to the central kit template.
 
 ## Session log
+- 2026-11-25: v0.2.1 reinstalled on the bench PC through the firmware-re `comp_install`, after commenting out the bench profile's stale 0.1.2 wheel override (`x86/harness.conf`, untracked; backup kept in the session scratchpad). Plugin 0.2.1 with the release wheel's hash, unblob 26.6.4, all 16 handlers and 4 extractors present. Bench check: one real file per handler through the installed `unblob` command, all claimed by the intended handler with no plugin error report. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: v0.2.1 released.
   - **Evidence:** full suite 45611010432 at 87b2c4b (452 passed, 7 xfailed); statuses recorded; review addenda U and F signed by the human; ready-for-shipment checked by the agent (not independently); dry run 45615542502.
   - **Release:** tag on 81c99be, release run 45617195455 (17 journey steps on the wheel). Files byte-identical to the artifact, and the sdist is clean. Copied to the public copy (Latest).
