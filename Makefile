@@ -9,24 +9,29 @@ SOAK_ARGS ?=
 # pytest's temp root: off /tmp (a small tmpfs here) and outside the repo.
 # pytest empties it at the start of each run, so it never piles up.
 PYTEST_BASETEMP ?= $(HOME)/.cache/unblob-installer-handlers/pytest
+# The venv: .venv, unless .venv was built elsewhere (the devcontainer, whose
+# scripts point at /workspaces/...) and doesn't run here. Then a host venv
+# outside the repo, so ruff, pyright and the tests never walk it.
+VENV_SHEBANG := $(shell head -1 .venv/bin/pip 2>/dev/null | sed 's/^\#!//')
+VENV ?= $(if $(VENV_SHEBANG),$(if $(wildcard $(VENV_SHEBANG)),.venv,$(HOME)/.cache/unblob-installer-handlers/venv-host),.venv)
 
-.PHONY: build test hil soak scrub-check prepublish audit setup
+.PHONY: build test hil soak scrub-check prepublish publish publish-releases audit setup
 
 build:
-	python3 -m venv .venv
-	.venv/bin/pip install -q -e '.[dev]'
+	python3 -m venv $(VENV)
+	$(VENV)/bin/pip install -q -e '.[dev]'
 
 test:
 	python3 tools/scrub.py --self-test
-	.venv/bin/ruff check .
-	.venv/bin/ruff format --check .
-	.venv/bin/pyright --pythonpath .venv/bin/python
+	$(VENV)/bin/ruff check .
+	$(VENV)/bin/ruff format --check .
+	$(VENV)/bin/pyright --pythonpath $(VENV)/bin/python
 	@mkdir -p $(PYTEST_BASETEMP)
-	.venv/bin/pytest -q --basetemp=$(PYTEST_BASETEMP)
+	$(VENV)/bin/pytest -q --basetemp=$(PYTEST_BASETEMP)
 
 hil:
 	@mkdir -p $(PYTEST_BASETEMP)
-	.venv/bin/pytest -q -m journey --basetemp=$(PYTEST_BASETEMP)
+	$(VENV)/bin/pytest -q -m journey --basetemp=$(PYTEST_BASETEMP)
 
 soak:
 	@test -n "$(SOAK_CMD)" || { echo 'usage: make soak RIG=A HOURS=72 SOAK_CMD="..." [SOAK_ARGS="--error-pattern ..."]'; exit 2; }
@@ -37,6 +42,16 @@ scrub-check:
 
 prepublish:
 	bash tools/prepublish.sh
+
+# Push main to the internal repository, then sync the public copy (decision 0007).
+publish:
+	git push origin main
+	tools/export-public.sh --push
+
+# After a release workflow has published vX.Y.Z internally: copy it to the public copy.
+publish-releases:
+	git push origin --tags
+	tools/export-public.sh --push --releases
 
 # Audit ALL your GitHub repos (full history). Read-only. Report goes to ~/.cache/repo-audit/
 audit:

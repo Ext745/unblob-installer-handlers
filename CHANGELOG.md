@@ -17,8 +17,18 @@ specification, kept in the project's internal repository (not public).
   scans (`hygiene.yml`, gitleaks, pre-commit), project state files
   (`GOAL.md`, `STATUS.md`, `TESTING.md`) and decision records. No handler
   changes.
-- `tools/export-public.sh`: builds the public copy of the repository
-  (decision 0007).
+- `tools/export-public.sh` builds the public copy of the repository
+  (decision 0007). `make publish` and `make publish-releases` run it.
+- `make prepublish` accepts history findings listed in `.prepublish-allow`
+  as reviewed false positives, by line fingerprint.
+- `make build` and `make test` use a host venv outside the repo when `.venv`
+  belongs to the devcontainer.
+
+### Changed
+
+- `hygiene.yml` pins its actions by commit SHA.
+- CONTRIBUTING explains that pull requests are applied in the internal
+  repository and arrive through the next sync.
 
 ## [0.2.0] — 2026-11-25
 

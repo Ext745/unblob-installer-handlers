@@ -1,0 +1,39 @@
+# Reviewed false positives in git history: '<kind> <fingerprint>' per line.
+# A fingerprint is the sha256 (16 hex) of the flagged line's stripped text,
+# printed by: python3 tools/scrub.py --git-history .
+# Reviewed 2026-11-25 (decision 0007). Add a line only after reading it.
+
+# Version strings read as public IPv4 (Setup Factory/Inno/GBL file names and versions)
+public-ip 065ff0e0df95db1b
+public-ip 0a9a75ec9a2a9627
+public-ip 0fc1c3e780f187ab
+public-ip 12313f0f4c73179f
+public-ip 125a435592684ddf
+public-ip 14682304d19e4c31
+public-ip 232d6d494f1b23ff
+public-ip 235922d55bd3f23e
+public-ip 23e1285931529a67
+public-ip 24d3a29cd95cf64a
+public-ip 267c8073a3d1a7a9
+public-ip 31b919021e711548
+public-ip 3322695715142311
+public-ip 37e8d3d9be42f24b
+public-ip 3b60c3a11bebf0db
+public-ip 55dd830126398437
+public-ip 6d64df8ff09f4d9a
+public-ip 74481339750ed787
+public-ip 765db881f10583c6
+public-ip 84e7850b645ffddd
+public-ip 9dea089f7cdc606f
+public-ip a6307efd322bc1f2
+public-ip bbed7b25b521ba29
+public-ip d2a026e725286e00
+public-ip f33ec776c5632213
+
+# Intel HEX fixture records read as an IMEI
+imei-imsi 0c7f7558dd06c086
+imei-imsi 8110806b500ec287
+imei-imsi ff73d805aeb819c7
+
+# $GH_RUNNER_PAT: a variable reference, no value (.devcontainer/runner-loop.sh)
+credential 6fdbb3694c305a9a

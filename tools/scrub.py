@@ -20,7 +20,9 @@ Usage:
 Lines containing the marker  scrub:allow  are left untouched.
 """
 import argparse
+import hashlib
 import ipaddress
+import os
 import re
 import subprocess
 import sys
@@ -191,7 +193,9 @@ _PEM_START = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
 
 def scan_git_history(repo=".", excludes=DEFAULT_HISTORY_EXCLUDES):
     """Scan lines added in every commit on every ref. Works on bare/mirror repos.
-    Returns a list of dicts: {commit, file, kind}, one per unique (commit, file, kind)."""
+    Returns a list of dicts: {commit, file, kind, fp}, one per unique (commit, file, kind, fp).
+    fp fingerprints the flagged line (sha256 of its stripped text, 16 hex digits), so a
+    reviewed false positive can be listed in .prepublish-allow without quoting it."""
     cmd = ["git", "-C", repo, "log", "-p", "--all", "--full-history", "--no-color", "--no-ext-diff",
            "--format=COMMIT %H", "--", "."] + [f":!{e}" for e in excludes]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -207,25 +211,48 @@ def scan_git_history(repo=".", excludes=DEFAULT_HISTORY_EXCLUDES):
             text = line[1:]
             found = ["pem-private-key"] if _PEM_START.search(text) else []
             _scrub_line(text, found)
+            fp = hashlib.sha256(text.strip().encode()).hexdigest()[:16] if found else ""
             for kind in found:
-                key = (commit, path, kind)
+                key = (commit, path, kind, fp)
                 if key not in seen:
                     seen.add(key)
-                    findings.append({"commit": commit, "file": path, "kind": kind})
+                    findings.append({"commit": commit, "file": path, "kind": kind, "fp": fp})
     proc.wait()
     if proc.returncode not in (0, None):
         raise RuntimeError(f"git log failed in {repo} (exit {proc.returncode})")
     return findings
 
 
+ALLOW_FILE = ".prepublish-allow"
+
+
+def load_allow(repo="."):
+    """Reviewed false positives: lines of '<kind> <fp>', '#' starts a comment."""
+    allow = set()
+    try:
+        with open(os.path.join(repo, ALLOW_FILE)) as fh:
+            for line in fh:
+                parts = line.split("#", 1)[0].split()
+                if len(parts) == 2:
+                    allow.add((parts[0], parts[1]))
+    except FileNotFoundError:
+        pass
+    return allow
+
+
 def check_git_history(repo="."):
+    allow = load_allow(repo)
     findings = scan_git_history(repo)
-    for f in findings:
-        print(f"{f['commit']}  {f['file']}: {f['kind']}")
-    if findings:
-        print(f"\n{len(findings)} finding(s) in history. Find with: git log --all -p -- <file>",
+    shown = [f for f in findings if (f["kind"], f["fp"]) not in allow]
+    for f in shown:
+        print(f"{f['commit']}  {f['file']}: {f['kind']} {f['fp']}")
+    if len(shown) < len(findings):
+        print(f"{len(findings) - len(shown)} reviewed finding(s) allowed by {ALLOW_FILE}",
               file=sys.stderr)
-    return 1 if findings else 0
+    if shown:
+        print(f"\n{len(shown)} finding(s) in history. Find with: git log --all -p -- <file>",
+              file=sys.stderr)
+    return 1 if shown else 0
 
 
 def self_test():

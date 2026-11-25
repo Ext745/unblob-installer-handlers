@@ -27,9 +27,12 @@ make test         # unit/integration tests (also run in CI)
 make hil          # hardware-in-the-loop, needs target hardware attached
 make scrub-check  # personal-data scan of tracked files
 make prepublish   # full pre-publication check (history included)
+make publish      # push main internally, then sync the public copy
+make publish-releases  # after a release: copy it to the public copy
 # Long runs are started by the human: make soak RIG=A HOURS=72 SOAK_CMD="..."
 ```
-- `make build`: creates `.venv` and installs the package with its pinned dev tools.
+- `make build`: creates `.venv` and installs the package with its pinned dev tools. On the bench host, where `.venv` belongs to the devcontainer, it uses `~/.cache/unblob-installer-handlers/venv-host` instead (override: `VENV=`). There the tiers that need the pinned extractors fail by design; they run in the container and on the runner.
+- `make publish` / `make publish-releases`: decision 0007. Run them from the internal repository only; they need `.public-export/` and git-filter-repo.
 - `make test`: scrubber self-test, then ruff, pyright and pytest, as `ci.yml` does.
 - `make hil`: the journey tests (`pytest -m journey`). Needs the real-file store and the project's runner.
 

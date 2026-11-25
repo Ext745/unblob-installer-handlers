@@ -107,4 +107,10 @@ Keep a pull request to one handler or one fix, and say which requirement it
 implements or fixes. CI on a pull request runs lint, types and the unit
 tier on a GitHub-hosted runner; the integration, real-file and journey tiers
 need the pinned extractors and the real-file store, and run on the project's
-own runner after the merge.
+own runner.
+
+This repository is a published copy of the project's internal repository,
+where development and the full test suite happen. So a pull request here is
+not merged on GitHub. The maintainer applies it in the internal repository,
+keeping you as the commit's author, and it arrives here with the next sync.
+The maintainer then closes the pull request with a link to that commit.
