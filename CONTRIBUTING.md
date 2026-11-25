@@ -106,5 +106,7 @@ Regenerate the expected output with `python -m tests.integration.build_outputs`.
 ## Pull requests
 
 Keep a pull request to one handler or one fix, and say which requirement it
-implements or fixes. CI for pull requests from forks is started by the
-maintainer after a first look.
+implements or fixes. CI on a pull request runs lint, types and the unit
+tier on a GitHub-hosted runner; the integration, real-file and journey tiers
+need the pinned extractors and the real-file store, and run on the project's
+own runner after the merge.

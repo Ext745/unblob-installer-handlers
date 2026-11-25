@@ -1,7 +1,10 @@
 name: lint + unit tests
 
-# Every job runs on the project's own runner (.devcontainer); there are no
-# hosted-runner minutes for this private repo. Every push gets the fast
+# Pushes to main run on the project's own runner next to the bench
+# (.devcontainer). Pull requests run on a GitHub-hosted runner instead, so
+# code from a fork never runs on the bench PC: lint, types and the unit tier
+# (the integration tier needs the pinned extractors only the project's runner
+# has; it runs there after the merge). Every push gets the fast
 # tiers: lint, types, unit and integration tests, about 5 minutes. The slow
 # tiers (journey, real-file, and TC-CON-02's re-run under Python 3.10 and
 # 3.14) and the JUnit report plan statuses are recorded from run in the
@@ -19,13 +22,13 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: bench             # one job at a time on the runner next to the bench
-  cancel-in-progress: false
-
 jobs:
   check:
+    if: github.event_name == 'push'
     runs-on: [self-hosted, testbench]
+    concurrency:
+      group: bench         # one job at a time on the runner next to the bench
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -49,3 +52,34 @@ jobs:
         run: >-
           .venv/bin/pytest -q tests/unit tests/integration
           --deselect tests/integration/test_constraints.py::test_tc_con_02_suites_pass_under_3_10_and_3_14
+
+  pull-request:
+    # GitHub-hosted: a pull request, possibly from a fork, never reaches the
+    # bench runner. No secrets; contents read-only.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: libmagic and 7z (unblob and the NSIS unit tests need them)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libmagic1 7zip
+
+      - name: Fresh venv with unblob 26.6.4 and the pinned dev tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -q -e '.[dev]'
+
+      - name: ruff (unblob's configuration, FSD C-05)
+        run: |
+          .venv/bin/ruff check .
+          .venv/bin/ruff format --check .
+
+      - name: pyright (unblob's configuration, FSD C-05)
+        env:
+          PYRIGHT_PYTHON_IGNORE_WARNINGS: "1"
+        run: .venv/bin/pyright --pythonpath .venv/bin/python
+
+      - name: Unit tier
+        run: .venv/bin/pytest -q tests/unit
