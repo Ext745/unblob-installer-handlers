@@ -27,10 +27,9 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 
 ## Next steps
 1. Watch the weekly `unblob latest` runs. When one is green on a newer unblob, bump the tested version (decision 0008).
-2. Merge Ext745/project-template PR #7 (the `.prepublish-allow` support ported to the kit template; CI green).
 
 ## Session log
-- 2026-11-25: `.prepublish-allow` support ported to the kit template: Ext745/project-template PR #7 (`scrub.py` fingerprints and allowlist with a self-test case, mutation-checked; `prepublish.sh` count; `TEMPLATE_USAGE.md`). Its CI passed. The project-specific exclusion of `test_setupfactory_real.py` was not ported. By: agent: Claude Opus 5.5 via Claude Code
+- 2026-11-25: `.prepublish-allow` support ported to the kit template: Ext745/project-template PR #7 (`scrub.py` fingerprints and allowlist with a self-test case, mutation-checked; `prepublish.sh` count; `TEMPLATE_USAGE.md`). Its CI passed, and it was merged as e22476c. The project-specific exclusion of `test_setupfactory_real.py` was not ported. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: private vulnerability reporting enabled on the public repo, as `SECURITY.md` describes. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: v0.2.1 reinstalled on the bench PC through the firmware-re `comp_install`, after commenting out the bench profile's stale 0.1.2 wheel override (`x86/harness.conf`, untracked; backup kept in the session scratchpad). Plugin 0.2.1 with the release wheel's hash, unblob 26.6.4, all 16 handlers and 4 extractors present. Bench check: one real file per handler through the installed `unblob` command, all claimed by the intended handler with no plugin error report. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: v0.2.1 released.
