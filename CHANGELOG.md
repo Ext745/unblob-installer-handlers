@@ -10,7 +10,9 @@ also carry the sdist.
 Requirement IDs (FR-…, NFR-…) refer to the project's functional
 specification, kept in the project's internal repository (not public).
 
-## [Unreleased]
+## [0.2.1] — 2026-11-25
+
+No handler changes. Packaging, CI and the public copy of the repository.
 
 ### Added
 
