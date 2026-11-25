@@ -7,8 +7,8 @@ one of them.
 
 | Plane | Question | Directory | Reader |
 |---|---|---|---|
-| **WHAT** | What must be true of the system? | [`Functionality/`](Functionality/) | Anyone judging whether it is correct — reviewer, tester, future maintainer |
-| **HOW** | How is it built and changed? | [`Method/`](Method/) | Whoever writes the next change, human or agent |
+| **WHAT** | What must be true of the system? | `Functionality/` (internal) | Anyone judging whether it is correct — reviewer, tester, future maintainer |
+| **HOW** | How is it built and changed? | `Method/` (internal) | Whoever writes the next change, human or agent |
 | **OPERATE** | How do I install and run it? | [`UserDocumentation/`](UserDocumentation/) | Whoever installs, drives, or recovers the running system |
 
 **Authority order: the FSD defines the target; the Method defines the way there.**
@@ -23,7 +23,7 @@ None of the three carries history or rationale narrative. History lives in
 
 | If you are… | Read |
 |---|---|
-| Making a change | [`Method/AI-Workflow.md`](Method/AI-Workflow.md) — the loop every change follows |
+| Making a change | `Method/AI-Workflow.md` (internal) — the loop every change follows |
 | Judging correctness | `Functionality/unblob-installer-handlers-fsd.md` — requirements, state model, verification contracts |
 | Installing or running it | [`UserDocumentation/`](UserDocumentation/) |
 | Wondering why | [`decisions/`](decisions/) for significant decisions, otherwise `git log` |
