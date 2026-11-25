@@ -11,6 +11,8 @@ name: lint + unit tests
 # "full suite" workflow (full.yml), started by hand before a gate check.
 # Pushes touching only the plan, gates, reviews or docs skip it; no test
 # reads those paths.
+# Secret and personal-data scans run in hygiene.yml, also hosted
+# (docs/decisions/0004-hosted-hygiene-ci.md, 0006-pull-requests-hosted.md).
 
 on:
   push:

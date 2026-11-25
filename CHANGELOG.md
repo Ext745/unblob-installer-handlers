@@ -9,6 +9,15 @@ carries the wheel and the sdist that its release workflow verified.
 Requirement IDs (FR-…, NFR-…) refer to the
 [functional specification](docs/Functionality/unblob-installer-handlers-fsd.md).
 
+## [Unreleased]
+
+### Added
+
+- Repo kit: agent manual (`AGENTS.md`), `Makefile`, secret and personal-data
+  scans (`hygiene.yml`, gitleaks, pre-commit), project state files
+  (`GOAL.md`, `STATUS.md`, `TESTING.md`) and decision records. No handler
+  changes.
+
 ## [0.2.0] — 2026-11-25
 
 Seven handlers added, sixteen in total. Still pinned to unblob 26.6.4.

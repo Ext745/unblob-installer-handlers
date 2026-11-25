@@ -56,8 +56,8 @@ def flat(table: dict, prefix: str = "") -> dict:
 # unblob 26.6.4's, and why none of them weakens a check on src/:
 ALLOWED_DIFFERENCES = {
     # paths that hold no package source
-    "ruff.extend-exclude": [".claude"],
-    "pyright.exclude": [".venv", "build", ".claude", ".devcontainer"],
+    "ruff.extend-exclude": [".claude", "tools"],
+    "pyright.exclude": [".venv", "build", ".claude", ".devcontainer", "tools"],
     # first-party is this package, not unblob
     "ruff.lint.isort.known-first-party": ["unblob_installers"],
     # dropped: it exempted __init__.py from unused-import checks (stricter without)

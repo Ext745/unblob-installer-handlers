@@ -135,7 +135,8 @@ class _Layout:
 def _layout(version: tuple[int, int]) -> _Layout:
     if version >= (10, 0):
         return _Layout(72, 12, "<q", 3)
-    if version >= (9, 2):  # sfextract says 9.3; a 9.2.0.0 installer has it too
+    # sfextract says 9.3; a 9.2.0.0 installer has it too  scrub:allow
+    if version >= (9, 2):
         return _Layout(72, 11, "<q", 8)
     if version >= (8, 0):
         return _Layout(72, 10, "<q", 8)

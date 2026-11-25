@@ -1,9 +1,9 @@
 """GBL against a real Gecko SDK build (FSD §13d, FR-GBL-07).
 
 From the real-file store (D-4, MANIFEST.yaml): the Nabu Casa SkyConnect
-Zigbee NCP 9.1.1.1 GBL and the ELF it was built from, one CI artifact. The
-oracle is the ELF's PT_LOAD file data at p_paddr, read independently here
-(ELF32 little-endian program headers).
+Zigbee NCP 9.1.1.1 GBL (a version, scrub:allow) and the ELF it was built
+from, one CI artifact. The oracle is the ELF's PT_LOAD file data at
+p_paddr, read independently here (ELF32 little-endian program headers).
 """
 
 import struct

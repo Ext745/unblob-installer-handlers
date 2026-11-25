@@ -82,7 +82,12 @@ def utf16(files: list[tuple[str, str, str, bytes]]) -> bytes:
 
 def files(payload: bytes) -> list[tuple[str, str, str, bytes]]:
     return [
-        ("setup.exe", "Disk1\\setup.exe", "1.0.0.2", payload[:2000]),
+        (
+            "setup.exe",
+            "Disk1\\setup.exe",
+            "1.0.0.2",  # scrub:allow version number
+            payload[:2000],
+        ),
         ("data1.hdr", "Disk1\\data1.hdr", "0.0.0.0", payload[2000:3000]),  # noqa: S104 - a version string
         ("readme.txt", "Disk1\\readme é.txt", "0.0.0.0", b"read me\r\n"),  # noqa: S104 - a version string
     ]

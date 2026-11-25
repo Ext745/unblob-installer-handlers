@@ -1,5 +1,7 @@
 # unblob-installer-handlers
 
+**Maturity:** `experimental` · **Tested on:** Linux x86-64, real vendor files · **Soak time:** 0 h. See [TESTING.md](TESTING.md) and [STATUS.md](STATUS.md)
+
 An [unblob](https://github.com/onekey-sec/unblob) plugin that adds sixteen
 handlers: eight for MCU firmware containers and eight for Windows installers.
 Install it next to unblob and the handlers are found through unblob's plugin
@@ -122,6 +124,14 @@ unblob in the meantime.
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) for
 reporting a vulnerability, and [CHANGELOG.md](CHANGELOG.md) for what each
 release changed.
+
+## How this project is built
+
+This project is **AI-led and human-directed**, and every part is labelled honestly as verified, experimental, or abandoned.
+
+- [Development approach](https://github.com/Ext745/.github/blob/main/APPROACH.md)
+- [AI usage policy](https://github.com/Ext745/.github/blob/main/AI_POLICY.md)
+- [Support](https://github.com/Ext745/.github/blob/main/SUPPORT.md)
 
 ## Licence
 

@@ -14,7 +14,8 @@ On conflict the FSD wins on *what must be true*, the Method wins on *how to get
 there*. User documentation describes the system as built — if it disagrees with
 either it is stale, which means reality or the spec moved.
 
-None of the three carries history or rationale narrative. Those live in `git log`.
+None of the three carries history or rationale narrative. History lives in
+`git log`; the reasons for significant decisions live in [`decisions/`](decisions/).
 
 ## Where to start
 
@@ -23,7 +24,7 @@ None of the three carries history or rationale narrative. Those live in `git log
 | Making a change | [`Method/AI-Workflow.md`](Method/AI-Workflow.md) — the loop every change follows |
 | Judging correctness | `Functionality/unblob-installer-handlers-fsd.md` — requirements, state model, verification contracts |
 | Installing or running it | [`UserDocumentation/`](UserDocumentation/) |
-| Wondering why | `git log` — a decision leaves its effect in a plane and its reason in the commit |
+| Wondering why | [`decisions/`](decisions/) for significant decisions, otherwise `git log` |
 
 ## Routing a new sentence
 
@@ -33,7 +34,8 @@ Ask in order; the first yes wins:
 2. Constrains how code is written or verified → **Method**
 3. Tells a human how to run or recover the system → **UserDocumentation**
 4. About collaborating with an AI assistant → `CLAUDE.md`, which is not a plane
-5. Why a past decision was made → the commit message
+5. Why a significant decision was made → `docs/decisions/`
+6. Why any other change was made → the commit message
 
 Two questions settle the hard cases. *Could a black-box tester verify it?* — yes
 means WHAT. *Would it survive a rewrite in another language?* — no means HOW.
@@ -43,12 +45,17 @@ Worked examples: *"reconnects within 30 s"* and *"rejects oversized payloads wit
 import higher ones"* are Method. *"Flash the SD card with Raspberry Pi Imager"*
 is UserDocumentation.
 
-## There is no decisions file
+## Decisions
 
 A settled decision leaves its **effect** as present-state content in the plane
 it governs — a load-bearing "must not" becomes a stated negative requirement —
-and its reason in the commit message. Nothing else is recorded: a fossilised
-decision outlives the environment that justified it and then hinders new work.
+and its reason in the commit message.
+
+A significant decision also gets a record in [`decisions/`](decisions/): a change
+of direction, an unconventional choice, or a rejected option someone might try to
+bring back. The plane stays the authority on what is true; a record only says why.
+A fossilised decision hinders new work once its environment has gone, so when that
+happens, supersede the record rather than working around it.
 
 ## Writing rules
 
@@ -62,5 +69,5 @@ sanctioned exception, and only in the FSD.
 link. Two copies of a fact are two facts the moment one is edited, and the reader
 has no way to tell which is current.
 
-All three planes are present-state and single-home. Routing lives in the table
+All three planes are present-state and single-home; `decisions/` sits outside them. Routing lives in the table
 above and nowhere else — a second copy of the triage is the first thing to drift.

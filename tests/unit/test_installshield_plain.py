@@ -51,7 +51,13 @@ def ansi_record(source: str, destination: str, version: str, length: str, data: 
 
 
 THREE = [
-    (f"f{n}.bin", f"Disk1\\f{n}.bin", "1.0.0.0", bytes([n]) * 100) for n in range(3)
+    (
+        f"f{n}.bin",
+        f"Disk1\\f{n}.bin",
+        "1.0.0.0",  # scrub:allow version number
+        bytes([n]) * 100,
+    )
+    for n in range(3)
 ]
 
 
@@ -79,7 +85,13 @@ DECLINED = {
     "no overlay": lambda: bytes(minimal_pe()),
     "UTF-16 count 4 with 3 records": utf16_count_4_with_3,
     "ANSI first length 12a": lambda: setup_exe(
-        ansi_record("a.bin", "Disk1\\a.bin", "1.0.0.0", "12a", b"x" * 12)
+        ansi_record(
+            "a.bin",
+            "Disk1\\a.bin",
+            "1.0.0.0",  # scrub:allow version number
+            "12a",
+            b"x" * 12,
+        )
     ),
     "last record 1 byte past": last_record_one_byte_long,
 }
@@ -125,10 +137,18 @@ BAD_NAMES = ["..\\..\\evil.txt", "C:\\evil.txt", "\\\\server\\x"]
 def test_tc_sec_08_plain_names_outside_rejected(layout: str, tmp_path: Path):
     build = ansi if layout == "ansi" else utf16
     good = [
-        ("in.bin", "Disk1\\inside.txt", "1.0.0.0", b"inside"),
-        ("last.bin", "last.txt", "1.0.0.0", b"last"),
+        (
+            "in.bin",
+            "Disk1\\inside.txt",
+            "1.0.0.0",  # scrub:allow version number
+            b"inside",
+        ),
+        ("last.bin", "last.txt", "1.0.0.0", b"last"),  # scrub:allow version number
     ]
-    bad = [(f"e{n}.bin", name, "1.0.0.0", b"evil") for n, name in enumerate(BAD_NAMES)]
+    bad = [
+        (f"e{n}.bin", name, "1.0.0.0", b"evil")  # scrub:allow version number
+        for n, name in enumerate(BAD_NAMES)
+    ]
     base = tmp_path / "x"
     base.mkdir()
     source = base / "in.exe"

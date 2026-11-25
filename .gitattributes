@@ -1,0 +1,3 @@
+# Test inputs must stay byte-exact, and their contents aren't personal data.
+# Marked binary so git grep -I and history scans skip them.
+tests/**/__input__/** binary
