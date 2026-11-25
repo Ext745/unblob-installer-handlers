@@ -102,20 +102,22 @@ def test_tc_con_06_mit_licence_and_no_gpl_source():
     assert hits == []
 
 
-@pytest.mark.xfail(
-    strict=True, reason="FSD Phase 5 (after shipment): upstream PRs not opened yet"
-)
-def test_tc_con_07_every_handler_merged_or_in_review():
+def test_tc_con_07_every_handler_merged_in_review_or_not_offered():
     rows = progress_rows()
     assert rows
-    # A PR cell opens with the PR's URL; a merged cell is the unblob version.
-    # Anything else ("not opened: ...", a bare "#1687") is not a link.
+    # A PR cell opens with the PR's URL, or says the handler is not offered
+    # (C-07 is optional, FSD 0.27.0); a merged cell is the unblob version.
+    # Anything else ("not opened: ...", a bare "#1687", empty) is neither.
     pr = re.compile(r"https://github\.com/onekey-sec/unblob/pull/\d+\b")
     merged = re.compile(r"\d+\.\d+(\.\d+)?")
     missing = [
         name
         for name, cells in rows.items()
-        if not (pr.match(cells[2]) or merged.fullmatch(cells[3]))
+        if not (
+            pr.match(cells[2])
+            or cells[2].startswith("not offered:")
+            or merged.fullmatch(cells[3])
+        )
     ]
     assert missing == []
 

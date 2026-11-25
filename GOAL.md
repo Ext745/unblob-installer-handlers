@@ -35,7 +35,7 @@ From FSD §4.4:
 | 2 | Handlers work on real vendor files | Real-file tier and journey | ☑ *backfilled, unverified* |
 | 3 | Works through the `unblob` command, not only in-process | Journey, bench check on v0.2.0 | ☑ *backfilled, unverified* |
 | 4 | Released with the journey run on the released files | Shipped gate, v0.2.0 | ☑ *backfilled, unverified* |
-| 5 | Handlers contributed upstream, with handler order settled once #1255 merges | FSD Phases 5 and 7: C-07, FR-PE-03; held until the repo is public | ☐ |
+| 5 | Optional: handlers offered to unblob only if there is public interest after the repo is public. Handler order once #1255 merges is tracked separately (FR-PE-03) | FSD Phases 5 and 7 (optional since 0.27.0): C-07, FR-PE-03 | ☐ optional |
 
 ## References
 - `docs/Functionality/unblob-installer-handlers-fsd.md`
