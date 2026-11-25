@@ -3,6 +3,8 @@
 Read this before doing anything. `CLAUDE.md` is a symlink to this file.
 
 ## Project context (read, don't duplicate)
+> `docs/Functionality/`, `docs/Method/`, `testing/` and `PLAN.md` are kept in the project's internal repository and are not in the public one. References to them here, and FSD section and requirement IDs, point there.
+
 | File | Purpose |
 |---|---|
 | `GOAL.md` | Goal, constraints, **non-goals**, acceptance criteria |

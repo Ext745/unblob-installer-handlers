@@ -13,7 +13,7 @@ step() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 bad()  { printf '  \033[31mFAIL\033[0m %s\n' "$1"; fail=1; }
 note() { printf '  \033[33mWARN\033[0m %s\n' "$1"; warn=1; }
 good() { printf '  \033[32mOK\033[0m   %s\n' "$1"; }
-EXCL=(':!tools/scrub.py' ':!*lock.json' ':!*.lock')
+EXCL=(':!tools/scrub.py' ':!*lock.json' ':!*.lock' ':!tests/realfile/test_setupfactory_real.py')  # as make scrub-check
 
 step "Secrets in full git history (gitleaks)"
 if command -v gitleaks >/dev/null; then

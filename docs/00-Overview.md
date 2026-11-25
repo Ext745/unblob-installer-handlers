@@ -1,5 +1,7 @@
 # unblob Installer & MCU-Container Handlers — Documentation
 
+> `docs/Functionality/`, `docs/Method/`, `testing/` and `PLAN.md` are kept in the project's internal repository and are not in the public one. References to them here, and FSD section and requirement IDs, point there.
+
 Three planes, three questions, three readers. Every sentence belongs to exactly
 one of them.
 

@@ -16,15 +16,16 @@ Open an issue with:
 ## How this project works
 
 Every behaviour is written down as a requirement before it is coded. The
-[functional specification](docs/Functionality/unblob-installer-handlers-fsd.md)
-(the FSD) states what each handler must and must not do, with a
-verification contract for each requirement. `testing/test-plan.yaml` lists
-every test, the requirements it verifies, and its last result.
+functional specification (the FSD) states what each handler must and must
+not do, with a verification contract for each requirement, and a test plan
+lists every test, the requirements it verifies, and its last result. Both
+are kept in the project's internal repository (not public); requirement IDs in the code and tests
+refer to them.
 
 So a change that adds or alters behaviour starts in an issue: describe what
 the handler should do, and the FSD and test plan are updated to match. A
 fix that makes a handler meet an existing requirement can go straight to a
-pull request. The [Method docs](docs/Method/) describe the full workflow.
+pull request.
 
 ## Development setup
 
@@ -66,14 +67,11 @@ PYRIGHT_PYTHON_IGNORE_WARNINGS=1 .venv/bin/pyright --pythonpath .venv/bin/python
   unblob's own handlers (`NAME`, `PATTERNS`, `EXTRACTOR`, `DOC`,
   `calculate_chunk()`), so it can move into unblob unchanged. A handler never
   imports another handler; shared code lives in the `_`-prefixed modules.
-  [`docs/Method/project/architecture.md`](docs/Method/project/architecture.md)
-  has the details.
 - **Treat every input as hostile.** Bound what a file can make a handler
   allocate or write, and keep every output path inside the extraction
   directory (FSD §18).
-- **Tests come with the change.** Each test is declared in
-  `testing/test-plan.yaml` with the requirement it verifies, and checks what
-  must *not* happen as well as what must.
+- **Tests come with the change.** Name the requirement each test verifies
+  (its `TC-…` ID), and check what must *not* happen as well as what must.
 
 ## Licensing — please read
 

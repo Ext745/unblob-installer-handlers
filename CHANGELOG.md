@@ -6,8 +6,8 @@ a minor version adds handlers or changes behaviour, and a patch version
 fixes defects. Each release on the
 [releases page](https://github.com/Ext745/unblob-installer-handlers/releases)
 carries the wheel and the sdist that its release workflow verified.
-Requirement IDs (FR-…, NFR-…) refer to the
-[functional specification](docs/Functionality/unblob-installer-handlers-fsd.md).
+Requirement IDs (FR-…, NFR-…) refer to the project's functional
+specification, kept in the project's internal repository (not public).
 
 ## [Unreleased]
 
@@ -17,6 +17,8 @@ Requirement IDs (FR-…, NFR-…) refer to the
   scans (`hygiene.yml`, gitleaks, pre-commit), project state files
   (`GOAL.md`, `STATUS.md`, `TESTING.md`) and decision records. No handler
   changes.
+- `tools/export-public.sh`: builds the public copy of the repository
+  (decision 0007).
 
 ## [0.2.0] — 2026-11-25
 

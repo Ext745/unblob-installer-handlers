@@ -113,11 +113,11 @@ unblob in the meantime.
 
 - [User manual](docs/UserDocumentation/User-Manual.md): installation, the
   output layout per format, limitations, troubleshooting.
-- [Functional specification](docs/Functionality/unblob-installer-handlers-fsd.md):
-  every requirement and how it is verified.
-- The project's working records: [`PLAN.md`](PLAN.md) (progress per handler),
-  [`testing/test-plan.yaml`](testing/test-plan.yaml) (every test and its last
-  result), and [`docs/Method/`](docs/Method/) (how it was built and tested).
+- [Decision records](docs/decisions/): why the project is shaped as it is.
+- The functional specification (FSD), the test plan, the project plan and the
+  method docs are kept in the project's internal repository (not public). Requirement IDs (`FR-…`,
+  `NFR-…`, `C-…`) and "FSD §" section numbers in this repo refer to that
+  specification.
 
 ## Contributing
 

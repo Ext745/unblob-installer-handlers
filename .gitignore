@@ -24,3 +24,6 @@ secrets/
 
 # --- repo kit: soak evidence ---
 tests/soak/logs/**/output.log
+
+# --- public copy export rules: personal data, never commit (decision 0007) ---
+.public-export/

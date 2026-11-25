@@ -214,4 +214,4 @@ look for these entries.
 
 ---
 
-**Contract:** [`../Functionality/unblob-installer-handlers-fsd.md`](../Functionality/unblob-installer-handlers-fsd.md) · **Build rules:** [`../Method/AI-Workflow.md`](../Method/AI-Workflow.md)
+**Contract:** the functional specification (FSD) · **Build rules:** the Method docs. Both are kept in the project's internal repository (not public); FSD section and requirement IDs in this manual refer to it.

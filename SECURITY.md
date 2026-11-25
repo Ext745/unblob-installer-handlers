@@ -9,8 +9,8 @@ A vulnerability is a file that makes a handler in this package:
 
 - write outside unblob's extraction directory;
 - use memory or disk out of proportion to the file, beyond the bounds the
-  [functional specification](docs/Functionality/unblob-installer-handlers-fsd.md#18-security)
-  states (NFR-SEC-01 to NFR-SEC-11);
+  [user manual](docs/UserDocumentation/User-Manual.md#5-limitations) states
+  (requirements NFR-SEC-01 to NFR-SEC-11);
 - hang, or crash unblob in a way that hides other content of the file.
 
 Not in scope, as stated in the specification's accepted risks:

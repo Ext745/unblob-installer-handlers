@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   full:
+    if: github.repository == 'Ext745/unblob-installer-handlers-internal'   # the bench runner; decision 0007
     runs-on: [self-hosted, testbench]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

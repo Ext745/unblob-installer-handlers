@@ -11,6 +11,8 @@ name: lint + unit tests
 # "full suite" workflow (full.yml), started by hand before a gate check.
 # Pushes touching only the plan, gates, reviews or docs skip it; no test
 # reads those paths.
+# The bench runner serves only the internal repository; the public copy
+# runs the hosted job on pushes too (docs/decisions/0007-public-copy.md).
 # Secret and personal-data scans run in hygiene.yml, also hosted
 # (docs/decisions/0004-hosted-hygiene-ci.md, 0006-pull-requests-hosted.md).
 
@@ -26,7 +28,7 @@ permissions:
 
 jobs:
   check:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.repository == 'Ext745/unblob-installer-handlers-internal'
     runs-on: [self-hosted, testbench]
     concurrency:
       group: bench         # one job at a time on the runner next to the bench
@@ -57,8 +59,9 @@ jobs:
 
   pull-request:
     # GitHub-hosted: a pull request, possibly from a fork, never reaches the
-    # bench runner. No secrets; contents read-only.
-    if: github.event_name == 'pull_request'
+    # bench runner. No secrets; contents read-only. Also every push to the
+    # public copy, which has no bench runner.
+    if: github.event_name == 'pull_request' || github.repository != 'Ext745/unblob-installer-handlers-internal'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

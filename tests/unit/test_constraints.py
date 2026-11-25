@@ -27,7 +27,10 @@ def committed_fixtures() -> list[Path]:
 
 def progress_rows() -> dict[str, list[str]]:
     """PLAN.md's progress table: handler -> its remaining cells."""
-    plan = (ROOT / "PLAN.md").read_text()
+    path = ROOT / "PLAN.md"
+    if not path.exists():  # the public copy (decision 0007)
+        pytest.skip("PLAN.md is kept in the internal repository")
+    plan = path.read_text()
     table = plan.split("## Progress", 1)[1].split("\n\n", 2)[1]
     rows = [
         [cell.strip() for cell in line.strip("|").split("|")]

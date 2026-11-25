@@ -1,5 +1,7 @@
 # Status
 
+> `docs/Functionality/`, `docs/Method/`, `testing/` and `PLAN.md` are kept in the project's internal repository and are not in the public one. References to them here, and FSD section and requirement IDs, point there.
+
 **Updated:** 2026-11-25 · **Maturity:** `experimental` · **Visibility:** private
 
 ## Summary
@@ -22,12 +24,18 @@ A host-side plugin, so "real" here means real files on the project's runner. See
 - `unblob==26.6.4` is an exact pin (FSD C-01). Installing the plugin beside a newer unblob will downgrade unblob or fail to resolve. 26.6.4 is still the latest on PyPI (checked 2026-11-25). Proposal waiting on the human: a lower bound plus a CI job against the newest unblob, as an FSD C-01 change with a decision record.
 
 ## Next steps
-1. Fix GitHub billing, or flip the repo public, then re-run probe PR #2 and close it.
-2. Before going public: `make prepublish`; decide whether internal docs stay public; decide on rewriting the commit email (destructive, before the flip).
-3. After the flip: enable private vulnerability reporting (`SECURITY.md` points to it).
+1. Public copy (decision 0007), each step confirmed by the human:
+   - set `GH_REPO` in `.devcontainer/.env` to the internal name;
+   - rename this repo to `unblob-installer-handlers-internal`;
+   - create the public repo, private at first;
+   - `tools/export-public.sh --push --releases`;
+   - the human reviews it and flips it public.
+2. Re-run probe PR #2 on the internal repo or close it. Hosted jobs on the public copy start once it is public.
+3. After the flip: enable private vulnerability reporting on the public repo (`SECURITY.md` points to it).
 4. Next release: run `full.yml`, record from its JUnit, one release review addendum covering changes since v0.2.0 (CI split, PR job, this kit).
 
 ## Session log
+- 2026-11-25: `make prepublish`: gitleaks clean (319 commits). Real personal data: the owner's email in 634 commits and two board MACs in history. Everything else is a reviewed false positive (decision 0007). Chosen by the human: a public copy exported with rewritten history; `docs/Method/`, the FSD, `testing/` and `PLAN.md` stay internal; the full kit is public; hosted CI only there. Added `tools/export-public.sh` (dry run verified: 116 commits, 4 tags, no old email, MACs or internal paths); bench jobs guarded to the internal repo; TC-CON-07/11 skip without `PLAN.md`; public docs no longer link internal files. New tool dependency: git-filter-repo 2.47.0 (export only). Nothing pushed or renamed yet. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: `make test` and `make hil` pass `--basetemp` to pytest, defaulting to `~/.cache/unblob-installer-handlers/pytest` (override with `PYTEST_BASETEMP`), because pytest's temp dirs filled the 3.8 GB `/tmp` tmpfs on this PC. `ci.yml` and `full.yml` call pytest directly and are unchanged. Checked with `tests/integration/test_common.py` (15 passed, nothing written to `/tmp`). By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: repo kit landed on `main` as a merge of `repo-kit` (PR #1), so PR #1 closes as merged. Test files reformatted for `ruff format` with each `scrub:allow` kept on the line holding the version string. On this host: scrub, ruff, ruff format and pyright pass. pytest: 388 passed, 32 failed, because the devcontainer-built `.venv` has `/workspaces/...` shebangs (pyright, extractors) that don't resolve here. The runner's CI on `main` is the evidence. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code
 - 2026-11-25: repo kit ported onto `main` after v0.2.0: conflicts in `ci.yml`, `.gitignore`, `CHANGELOG.md`, `README.md` resolved; STATUS, GOAL, TESTING, AGENTS updated to v0.2.0; decision 0006 added. Not tested on hardware. By: agent: Claude Opus 5.5 via Claude Code

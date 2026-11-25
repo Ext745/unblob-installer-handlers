@@ -1,5 +1,7 @@
 # Goal
 
+> `docs/Functionality/`, `docs/Method/`, `testing/` and `PLAN.md` are kept in the project's internal repository and are not in the public one. References to them here, and FSD section and requirement IDs, point there.
+
 *Inferred from `docs/Functionality/unblob-installer-handlers-fsd.md` and `PLAN.md`, which stay the authority. If this file and the FSD disagree, the FSD wins.*
 
 ## What I want to achieve

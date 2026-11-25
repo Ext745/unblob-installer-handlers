@@ -1,5 +1,7 @@
 # Testing
 
+> `docs/Functionality/`, `docs/Method/`, `testing/` and `PLAN.md` are kept in the project's internal repository and are not in the public one. References to them here, and FSD section and requirement IDs, point there.
+
 Code in this repo is verified by running it on real files and through the real `unblob` command, not just by unit tests. `testing/test-plan.yaml` stays the source of truth for test results; this file records rigs and long runs.
 
 ## Test rigs
